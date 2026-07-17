@@ -1,0 +1,50 @@
+[
+  {
+    "review_id": "REV-001",
+    "rating": 1,
+    "title": "Unexpected renewal",
+    "content": "I did not realize the free trial would renew automatically.",
+    "version": "7.8.1",
+    "published_at": "2026-06-03"
+  },
+  {
+    "review_id": "REV-002",
+    "rating": 2,
+    "title": "Need a reminder",
+    "content": "There should be a clear reminder before the subscription renews.",
+    "version": "7.8.1",
+    "published_at": "2026-06-05"
+  },
+  {
+    "review_id": "REV-003",
+    "rating": 2,
+    "title": "Progress disappeared",
+    "content": "My workout progress disappeared after the latest update.",
+    "version": "7.8.2",
+    "published_at": "2026-06-09"
+  },
+  {
+    "review_id": "REV-004",
+    "rating": 3,
+    "title": "Hard to change exercises",
+    "content": "I want an easier way to replace exercises that hurt my knees.",
+    "version": "7.8.2",
+    "published_at": "2026-06-12"
+  },
+  {
+    "review_id": "REV-005",
+    "rating": 5,
+    "title": "Easy to follow",
+    "content": "The workouts are easy to follow and the subscription was clear to me.",
+    "version": "7.8.2",
+    "published_at": "2026-06-15"
+  },
+  {
+    "review_id": "REV-005",
+    "rating": 5,
+    "title": "Duplicate record",
+    "content": "The workouts are easy to follow and the subscription was clear to me.",
+    "version": "7.8.2",
+    "published_at": "2026-06-15"
+  }
+]
