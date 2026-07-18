@@ -203,6 +203,18 @@ AI 不得直接决定或伪造：
 - 测试结果：29 个自动测试通过；真实结果为 8 条评论、10 个 Insight、8 条去重证据 Review、0 OTHER、5 个动态 Topic，覆盖完整且无 Insight 跨 Topic 重复。
 - 关联 commit：本次 Atomic Insight 基数纠正提交。
 
+### 2026-07-18 / 阶段 3 Evidence Finding
+
+- 使用工具或模型：Codex 辅助实现；DeepSeek V4 Flash 真实运行；参考 Apple Review Summarization Pipeline 的代表性证据、平衡观点和 Groundedness。
+- 我的目标：把 Topic 转换为有支持评论、冲突评论、置信度和限制的问题，同时阻止单条评论被夸大。
+- 提供给 AI 的关键信息：已验证 Review、Atomic Insight、Topic、分析目标和“不生成 PRD”的阶段边界。
+- AI 生成或建议了什么：Finding Candidate、Discovery Candidate、Insight 级证据引用、Python 质量门和 Streamlit Evidence Finding 页面。
+- 我发现的问题：第一次真实运行时，模型正确找到 `REV-005` 的订阅正面冲突观点，但手填的 `source_topic_ids` 没有包含承载该 Insight 的 Topic，质量门因此拦截。
+- 我如何验证：把候选证据改为引用具体 Insight，由 Python 推导 Review 与 Topic；测试非法 Insight、错误情绪、Topic 遗漏、样本降级和置信度计算，再进行真实模型重跑。
+- 我做出的修改或取舍：模型负责语义判断；Python 负责关系推导、去重数量、置信度和最小证据门槛。当前门槛为 2，只用于保守小样本演示，不宣称统计显著性。
+- 测试结果：37 个自动测试通过；真实运行 4 个 Topic 得到 1 个 Finding 和 3 个 Discovery；主 Finding 有 2 条支持、1 条冲突，置信度由 Python 计算为 medium。
+- 关联 commit：本次 Evidence Finding 提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：

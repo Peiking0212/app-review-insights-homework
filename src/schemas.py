@@ -143,6 +143,113 @@ class Finding(StrictModel):
         return self
 
 
+class FindingCandidate(StrictModel):
+    """模型草拟的问题候选；统计数量和置信度不由模型填写。"""
+
+    candidate_id: str = Field(pattern=r"^CAND-[A-Za-z0-9_-]+$")
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    supporting_insight_ids: list[str] = Field(min_length=1)
+    conflicting_insight_ids: list[str] = Field(default_factory=list)
+    severity: Literal["low", "medium", "high", "critical"]
+    limitations: list[str] = Field(default_factory=list)
+
+    @field_validator("supporting_insight_ids", "conflicting_insight_ids")
+    @classmethod
+    def validate_insight_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "INSIGHT-")
+
+    @model_validator(mode="after")
+    def evidence_must_not_overlap(self) -> "FindingCandidate":
+        overlap = set(self.supporting_insight_ids) & set(
+            self.conflicting_insight_ids
+        )
+        if overlap:
+            raise ValueError(
+                "同一 Insight 不能同时作为支持和冲突证据："
+                + ", ".join(sorted(overlap))
+            )
+        return self
+
+
+class DiscoveryCandidate(StrictModel):
+    """模型认为暂时证据不足、不应升级为 Finding 的线索。"""
+
+    title: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    insight_ids: list[str] = Field(min_length=1)
+
+    @field_validator("insight_ids")
+    @classmethod
+    def validate_insight_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "INSIGHT-")
+
+
+class FindingDraft(StrictModel):
+    """模型输出的候选结果，进入下游前必须通过 Python 质量门。"""
+
+    candidates: list[FindingCandidate] = Field(default_factory=list)
+    discovery_candidates: list[DiscoveryCandidate] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def candidate_ids_must_be_unique(self) -> "FindingDraft":
+        candidate_ids = [candidate.candidate_id for candidate in self.candidates]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            raise ValueError("Finding Candidate ID 不得重复")
+        cited_insight_ids = [
+            insight_id
+            for candidate in self.candidates
+            for insight_id in [
+                *candidate.supporting_insight_ids,
+                *candidate.conflicting_insight_ids,
+            ]
+        ] + [
+            insight_id
+            for discovery in self.discovery_candidates
+            for insight_id in discovery.insight_ids
+        ]
+        duplicated = sorted(
+            insight_id
+            for insight_id, count in Counter(cited_insight_ids).items()
+            if count > 1
+        )
+        if duplicated:
+            raise ValueError(
+                "同一 Insight 不能被多个 Finding/Discovery 重复使用："
+                + ", ".join(duplicated)
+            )
+        return self
+
+
+class DiscoveryItem(StrictModel):
+    """经过质量门确认的证据不足线索。"""
+
+    discovery_id: str = Field(pattern=r"^DISC-[A-Za-z0-9_-]+$")
+    title: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    source_topic_ids: list[str] = Field(min_length=1)
+    review_ids: list[str] = Field(min_length=1)
+
+    @field_validator("source_topic_ids")
+    @classmethod
+    def validate_topic_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "TOPIC-")
+
+    @field_validator("review_ids")
+    @classmethod
+    def validate_review_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "REV-")
+
+
+class FindingGenerationResult(StrictModel):
+    """可以进入 UI 和后续阶段的 Evidence Finding 结果。"""
+
+    findings: list[Finding] = Field(default_factory=list)
+    discovery_items: list[DiscoveryItem] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+
 class Requirement(StrictModel):
     """能够追溯到 Finding 和原始评论的产品需求。"""
 

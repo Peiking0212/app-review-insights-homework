@@ -1,6 +1,6 @@
 # ReviewScope AI
 
-这是 App Review Insights Homework 的阶段 2 可运行版本。
+这是 App Review Insights Homework 的阶段 3 可运行版本。
 
 当前版本已经可以：
 
@@ -11,9 +11,11 @@
 - 展示每条清洗规则、移除数量、保留率和规则原因；
 - 展示数据统计、评分分布和评论表格；
 - 使用 AI 提取 Atomic Insight，并根据当前评论动态聚合 Topic；
-- 支持 OTHER / 无法判断，使用 Python 拦截不存在、重复或遗漏的引用。
+- 支持 OTHER / 无法判断，使用 Python 拦截不存在、重复或遗漏的引用；
+- 生成带支持证据、冲突证据、置信度和数据限制的 Evidence Finding；
+- 把证据不足的问题降级到 Discovery，不让它进入后续产品规划。
 
-当前版本不会生成 Finding 或 PRD。后续会在已经通过校验的 Topic 基础上增加用户问题、产品需求、测试用例和完整追溯检查。
+当前版本不会生成 PRD。后续会在已经通过质量门的 Finding 基础上增加版本规划、产品需求、测试用例和完整追溯检查。
 
 项目采用“参考案例驱动、确定性验证”的迭代方式。每个阶段开始前只查看对应案例，记录借鉴与不借鉴内容，再进行实现和测试。完整路线见 [项目参考与借鉴手册](REFERENCE_PLAYBOOK.md)。
 
@@ -160,6 +162,32 @@ UI 会同时展示 Atomic Insight 数量和涉及的去重 Review 数量。后�
 侧栏的“模型配置：已读取”只代表 `.env` 字段齐全；只有真实模型请求成功后才会显示“模型调用：已验证”。调用失败时，页面会显示脱敏后的底层服务商错误，API Key 和 Bearer Token 会被隐藏。
 
 内置数据只能验证这条流程。2026-07-18 已使用本地 DeepSeek Key 完成两组真实模型调用：健身/订阅示例的 5 条有效评论生成 5 个 Atomic Insight 和 4 个 Topic；外卖领域 `synthetic_test` 的 8 条有效评论生成 10 个 Atomic Insight、覆盖 8 条去重 Review，并形成 5 个 Topic。外卖数据中两条多问题评论各产生两个有原文依据的独立 Insight。两组引用与覆盖校验均通过，证明 Topic 会随输入变化。两组仍是功能测试数据，不能替代最终美国区 App Store 真实评论。
+
+## Evidence Finding
+
+阶段 3 将 Topic 转换成可以审查证据的问题：
+
+```text
+Review → Atomic Insight → Topic
+→ 模型草拟 Finding Candidate / Discovery Candidate
+→ Python 从 Insight 推导 Review 与 Topic
+→ 校验支持与冲突证据
+→ Python 计算支持数量和置信度
+→ Finding 或 Discovery
+```
+
+模型只引用具体 `INSIGHT-*`，不能自行填写 Review 数量、比例或置信度。Python 会从 Insight 关系确定来源 Topic 和去重 Review ID，并执行以下质量门：
+
+- 支持证据必须来自 `negative` 或 `mixed` Insight；
+- 冲突证据必须来自 `positive` 或 `mixed` Insight；
+- 不存在的 Insight、Review、Topic 和遗漏 Topic 会阻止本阶段；
+- 同一 Review 不能同时作为同一个 Finding 的支持和冲突证据；
+- 少于 2 条去重支持评论的候选进入 Discovery；
+- 置信度根据支持数、冲突数和 Topic 覆盖计算，不接受模型估算。
+
+`MIN_FINDING_SUPPORT = 2` 是当前小样本演示的保守门槛，不代表统计显著性。最终使用大规模美国区评论时应根据样本量重新校准。
+
+2026-07-18 使用内置演示数据真实运行阶段 3：4 个 Topic 生成 1 个 Evidence Finding 和 3 个 Discovery。`FIND-001` 有 2 条去重支持评论、1 条冲突评论，Python 计算置信度为 `medium`；其余单评论问题均被降级，没有被描述为普遍问题。该结果只验证流程，不是最终产品结论。
 
 ## 入口文件
 

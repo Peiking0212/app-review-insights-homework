@@ -15,7 +15,11 @@ from pydantic import ValidationError
 
 from src.cleaning import CleaningReport, clean_review_records
 from src.config import ModelConfigError, model_configured
-from src.schemas import TopicDiscoveryResult
+from src.finding_analysis import (
+    FindingAnalysisService,
+    FindingGenerationError,
+)
+from src.schemas import FindingGenerationResult, TopicDiscoveryResult
 from src.topic_discovery import (
     TopicDiscoveryError,
     TopicDiscoveryService,
@@ -100,6 +104,21 @@ def analysis_fingerprint(records: list[dict], goal: str) -> str:
     return sha256(serialized.encode("utf-8")).hexdigest()
 
 
+def finding_input_fingerprint(
+    topic_result: TopicDiscoveryResult, review_fingerprint: str
+) -> str:
+    """标识 Finding 的上游输入，防止 Topic 重跑后显示旧问题。"""
+    serialized = json.dumps(
+        {
+            "review_fingerprint": review_fingerprint,
+            "topic_result": topic_result.model_dump(mode="json"),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    return sha256(serialized.encode("utf-8")).hexdigest()
+
+
 def render_topic_result(
     result: TopicDiscoveryResult, review_records: list[dict]
 ) -> None:
@@ -162,6 +181,87 @@ def render_topic_result(
             st.warning(limitation)
 
 
+def render_finding_result(
+    result: FindingGenerationResult, review_records: list[dict]
+) -> None:
+    """展示 Finding、支持证据、冲突证据和 Discovery。"""
+    review_by_id = {record["review_id"]: record for record in review_records}
+    unique_support_ids = {
+        review_id
+        for finding in result.findings
+        for review_id in finding.supporting_review_ids
+    }
+    finding_column, support_column, discovery_column = st.columns(3)
+    finding_column.metric("Evidence Findings", len(result.findings))
+    support_column.metric("支持评论（去重）", len(unique_support_ids))
+    discovery_column.metric("Discovery 线索", len(result.discovery_items))
+
+    if not result.findings:
+        st.info("当前没有达到最小证据门槛的问题，请查看 Discovery。")
+    for finding in result.findings:
+        with st.expander(
+            f"{finding.finding_id} · {finding.title}", expanded=True
+        ):
+            st.write(finding.description)
+            severity_column, confidence_column, evidence_column, conflict_column = (
+                st.columns(4)
+            )
+            severity_column.metric("严重度", finding.severity)
+            confidence_column.metric("置信度", finding.confidence)
+            evidence_column.metric(
+                "支持评论", len(set(finding.supporting_review_ids))
+            )
+            conflict_column.metric(
+                "冲突评论", len(set(finding.conflicting_review_ids))
+            )
+            st.caption(
+                "来源 Topic：" + "、".join(finding.source_topic_ids)
+            )
+
+            st.markdown("**支持证据**")
+            for review_id in finding.supporting_review_ids:
+                review = review_by_id[review_id]
+                st.markdown(
+                    f"> **{review_id} · {review['rating']} 星**  "
+                    f"\n> {review['content']}"
+                )
+            st.markdown("**冲突证据**")
+            if finding.conflicting_review_ids:
+                for review_id in finding.conflicting_review_ids:
+                    review = review_by_id[review_id]
+                    st.markdown(
+                        f"> **{review_id} · {review['rating']} 星**  "
+                        f"\n> {review['content']}"
+                    )
+            else:
+                st.caption("当前数据中没有识别到直接冲突证据。")
+            for limitation in finding.limitations:
+                st.warning(limitation)
+
+    if result.discovery_items:
+        st.subheader("Discovery：证据不足，暂不进入产品规划")
+        for item in result.discovery_items:
+            with st.expander(f"{item.discovery_id} · {item.title}"):
+                st.write(item.reason)
+                st.caption(
+                    "来源 Topic："
+                    + "、".join(item.source_topic_ids)
+                    + "；评论："
+                    + "、".join(item.review_ids)
+                )
+                for review_id in item.review_ids:
+                    review = review_by_id[review_id]
+                    st.markdown(
+                        f"> **{review_id} · {review['rating']} 星**  "
+                        f"\n> {review['content']}"
+                    )
+
+    if result.limitations:
+        st.subheader("整体数据限制")
+        for limitation in result.limitations:
+            st.warning(limitation)
+
+
 def main() -> None:
     st.set_page_config(
         page_title="ReviewScope AI",
@@ -220,8 +320,22 @@ def main() -> None:
         f"{average_rating:.1f}" if pd.notna(average_rating) else "暂无",
     )
 
-    overview_tab, cleaning_tab, reviews_tab, topics_tab, workflow_tab = st.tabs(
-        ["数据概览", "清洗过程", "评论数据", "动态主题", "工作流程"]
+    (
+        overview_tab,
+        cleaning_tab,
+        reviews_tab,
+        topics_tab,
+        findings_tab,
+        workflow_tab,
+    ) = st.tabs(
+        [
+            "数据概览",
+            "清洗过程",
+            "评论数据",
+            "动态主题",
+            "Evidence Finding",
+            "工作流程",
+        ]
     )
 
     with overview_tab:
@@ -302,6 +416,8 @@ def main() -> None:
         if st.button("开始动态主题分析", type="primary"):
             st.session_state.pop("topic_result", None)
             st.session_state.pop("topic_fingerprint", None)
+            st.session_state.pop("finding_result", None)
+            st.session_state.pop("finding_fingerprint", None)
             try:
                 with st.spinner("正在提取 Atomic Insight 并聚合动态主题……"):
                     result = TopicDiscoveryService().discover(
@@ -327,6 +443,66 @@ def main() -> None:
         elif saved_result:
             st.info("输入数据或分析目标已改变，请重新运行动态主题发现。")
 
+    with findings_tab:
+        st.subheader("阶段 3：Evidence Finding")
+        st.markdown(
+            "模型负责草拟具体问题和冲突观点；Python 负责校验证据、"
+            "计算支持评论数和置信度。少于 2 条去重支持评论的候选会进入 Discovery。"
+        )
+        saved_topic_result = st.session_state.get("topic_result")
+        saved_topic_fingerprint = st.session_state.get("topic_fingerprint")
+        current_topic_result = None
+        if (
+            saved_topic_result
+            and saved_topic_fingerprint == current_fingerprint
+        ):
+            current_topic_result = TopicDiscoveryResult.model_validate(
+                saved_topic_result
+            )
+
+        if current_topic_result is None:
+            st.info("请先在“动态主题”标签完成阶段 2，Finding 不会绕过 Topic 生成。")
+        else:
+            current_finding_fingerprint = finding_input_fingerprint(
+                current_topic_result, current_fingerprint
+            )
+            if st.button("生成 Evidence Finding", type="primary"):
+                st.session_state.pop("finding_result", None)
+                st.session_state.pop("finding_fingerprint", None)
+                try:
+                    with st.spinner("正在归纳问题并执行 Evidence 质量门……"):
+                        finding_result = FindingAnalysisService().generate(
+                            prepared_reviews,
+                            current_topic_result,
+                            analysis_goal,
+                        )
+                except (ModelConfigError, FindingGenerationError) as error:
+                    st.error(str(error))
+                    st.info("Finding 阶段已停止，不会生成 PRD 或测试用例。")
+                else:
+                    st.session_state["finding_result"] = (
+                        finding_result.model_dump(mode="json")
+                    )
+                    st.session_state["finding_fingerprint"] = (
+                        current_finding_fingerprint
+                    )
+                    st.success("Evidence Finding 生成完成，质量门校验通过。")
+
+            saved_finding_result = st.session_state.get("finding_result")
+            saved_finding_fingerprint = st.session_state.get(
+                "finding_fingerprint"
+            )
+            if (
+                saved_finding_result
+                and saved_finding_fingerprint == current_finding_fingerprint
+            ):
+                render_finding_result(
+                    FindingGenerationResult.model_validate(saved_finding_result),
+                    prepared_records,
+                )
+            elif saved_finding_result:
+                st.info("上游 Topic 已改变，请重新生成 Evidence Finding。")
+
     with workflow_tab:
         st.subheader("当前完成情况")
         st.success("✅ 1. 读取示例数据或上传文件")
@@ -335,11 +511,12 @@ def main() -> None:
             "✅ 3. 过滤无效评分、空评论和重复评论，生成清洗审计报告"
         )
         st.success("✅ 4. AI 动态主题发现、OTHER 与引用校验")
-        st.info("⏳ 5. 生成问题、PRD 和测试用例（后续阶段）")
+        st.success("✅ 5. Evidence Finding、冲突证据与置信度质量门")
+        st.info("⏳ 6. 生成版本规划、PRD 和测试用例（后续阶段）")
 
     st.divider()
     st.caption(
-        "当前版本已支持模型驱动的动态主题；Finding、PRD 和测试用例仍未生成。"
+        "当前版本已支持动态主题与 Evidence Finding；PRD 和测试用例仍未生成。"
     )
 
 

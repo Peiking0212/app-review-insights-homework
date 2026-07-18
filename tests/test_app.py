@@ -15,6 +15,7 @@ class StreamlitAppTests(unittest.TestCase):
         self.assertIn("ReviewScope AI", app.title[0].value)
         self.assertEqual(app.metric[0].value, "6")
         self.assertEqual(app.metric[1].value, "5")
+        self.assertIn("Evidence Finding", [tab.label for tab in app.tabs])
 
 
 if __name__ == "__main__":

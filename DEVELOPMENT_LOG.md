@@ -89,14 +89,15 @@ UTF-8 source read: passed
 
 ### 阶段 3：Evidence Finding
 
-- 状态：待开始
+- 状态：已完成（真实模型与质量门验收通过）
 - 阶段参考：Apple Review Summarization Pipeline、Python Validator。
 - 任务：
-  - [ ] 每个 Finding 返回支持和冲突 Review ID。
-  - [ ] Python 检查 Review ID。
-  - [ ] Python 计算支持数量。
-  - [ ] 数据不足时降低置信度或放入 Discovery。
+  - [x] 每个 Finding 返回支持和冲突 Review ID。
+  - [x] Python 检查 Insight、Review 和 Topic 关系。
+  - [x] Python 计算去重支持数量和置信度。
+  - [x] 数据不足时降低置信度或放入 Discovery。
 - 验收：不存在非法引用；每个 Finding 可展开真实评论。
+- 已验证：37 个自动测试；内置演示数据真实生成 1 个 Finding 和 3 个 Discovery，支持、冲突和引用校验通过。
 - 建议 commits：
   - `feat: generate evidence-grounded findings`
   - `fix: reject hallucinated review references`
@@ -165,9 +166,9 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 进入阶段 3 Evidence Finding：每个 Finding 必须关联支持与冲突 Review ID，数量由 Python 计算，非法引用不得进入下游。
+> 进入阶段 4 版本规划与 PRD：只允许通过 Evidence 质量门的 Finding 进入需求，Discovery 不得伪装成确定性需求。
 
-验收前不进入 Finding/PRD。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
+每条 Requirement 必须关联 Finding 和 Review，并包含范围、不包含范围与可测试验收标准。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
 ## 6. 每日开发记录
 
@@ -272,6 +273,22 @@ UTF-8 source read: passed
 - 查看资料：Instructor + Pydantic 结构校验、项目 Python Validator 原则。
 - 实际借鉴：Atomic Insight 原子化、多观点评论拆分、模型结构化阶段有限重试、确定性跨 Topic 唯一性和失败阻断。
 - 明确不借鉴及原因：不强制一条 Review 只能一个 Insight，不增加无限重试，不让模型自行计算去重评论数；这些做法会丢失证据、掩盖错误或夸大统计。
+
+### 2026-07-18 / 阶段 3 Evidence Finding
+
+- 完成：增加 Finding/Discovery 候选 Schema、Insight 级证据引用、确定性质量门、置信度计算和 Streamlit Evidence Finding 标签页。
+- 修改文件：`app.py`、`src/schemas.py`、`src/finding_prompts.py`、`src/finding_analysis.py`、`tests/test_finding_analysis.py`、README 与 AI/开发记录。
+- 测试命令与结果：全部 37 个自动测试通过；相关 Python 文件语法检查通过；真实 DeepSeek 调用完成 Topic → Finding 链路。
+- 遇到的问题：第一次真实 Finding 调用把一条有效正面冲突评论关联到了不完整的来源 Topic，严格质量门正确阻止了结果。
+- AI 建议中的错误或风险：让模型同时填写 Insight、Review 和 Topic 三层关系会产生不一致；仅校验 Review ID 存在也无法证明它与问题语义相关。
+- 我的取舍：模型只引用最细粒度 Insight；Python 从 Insight 推导 Review 与 Topic，并计算去重数量与置信度。少于 2 条支持评论自动进入 Discovery。
+- 当前可以演示：Finding 数量、支持评论数、冲突评论数、严重度、置信度、原文下钻、限制和 Discovery 降级。
+- 尚未完成：版本规划与 PRD、测试用例、美国区真实评论采集和缓存 Demo。
+- 关联 commit：本次 Evidence Finding 提交。
+- 下一步：阶段 4 版本规划与 PRD，只允许通过质量门的 Finding 进入需求。
+- 查看资料：Apple Review Summarization Pipeline、项目 Python Validator 原则。
+- 实际借鉴：代表性证据、平衡正反观点、Groundedness 和自动化质量检查。
+- 明确不借鉴及原因：不采用模型微调、Embedding、多模型训练或人工评审平台；这些超出当前 P0 和截止时间范围。
 
 ## 7. 每次收工填写模板
 
