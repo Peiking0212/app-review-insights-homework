@@ -23,6 +23,7 @@
     table { width: 100%; border-collapse: collapse; min-width: 760px; }
     th, td { text-align: left; padding: 13px; border-bottom: 1px solid #eaecf0; vertical-align: top; }
     th { color: #475467; background: #f9fafb; }
+    .note { color: #475467; line-height: 1.7; }
     .status { display: grid; gap: 10px; }
     .done { color: #067647; background: #ecfdf3; padding: 12px; border-radius: 10px; }
     .later { color: #344054; background: #f2f4f7; padding: 12px; border-radius: 10px; }
@@ -39,6 +40,14 @@
     <article class="card"><div class="label">有效评论</div><div class="value" id="valid">-</div></article>
     <article class="card"><div class="label">清洗移除</div><div class="value" id="removed">-</div></article>
     <article class="card"><div class="label">平均评分</div><div class="value" id="average">-</div></article>
+  </section>
+  <section class="panel">
+    <h2>评论清洗过程</h2>
+    <p class="note">清洗由确定性规则完成，不调用大模型。每条评论只在首次命中的规则中计数，避免重复统计。</p>
+    <table>
+      <thead><tr><th>步骤</th><th>移除数量</th><th>规则说明</th></tr></thead>
+      <tbody id="cleaning-rows"></tbody>
+    </table>
   </section>
   <section class="panel">
     <h2>评分分布</h2>
@@ -64,17 +73,34 @@
   fetch("data/sample_reviews.json")
     .then(response => response.json())
     .then(raw => {
+      const report = { invalidId: 0, invalidRating: 0, emptyContent: 0, duplicateId: 0, duplicateContent: 0 };
       const seenIds = new Set();
       const seenContent = new Set();
-      const cleaned = raw.filter(review => {
-        const content = String(review.content || "").trim();
+      const cleaned = [];
+      raw.forEach(review => {
+        const reviewId = String(review.review_id || "").trim();
+        if (!reviewId) { report.invalidId += 1; return; }
         const rating = Number(review.rating);
-        if (!content || rating < 1 || rating > 5) return false;
-        if (seenIds.has(review.review_id) || seenContent.has(content)) return false;
-        seenIds.add(review.review_id);
-        seenContent.add(content);
-        return true;
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) { report.invalidRating += 1; return; }
+        const content = String(review.content || "").trim().replace(/\s+/g, " ");
+        if (!content) { report.emptyContent += 1; return; }
+        if (seenIds.has(reviewId)) { report.duplicateId += 1; return; }
+        const contentKey = content.toLocaleLowerCase();
+        if (seenContent.has(contentKey)) { report.duplicateContent += 1; return; }
+        seenIds.add(reviewId);
+        seenContent.add(contentKey);
+        cleaned.push({ ...review, review_id: reviewId, rating, content });
       });
+      const cleaningRows = [
+        ["1. 评论 ID 检查", report.invalidId, "删除 review_id 为空的记录，保证后续证据可以追溯。"],
+        ["2. 评分合法性检查", report.invalidRating, "评分必须是 1 到 5 的整数。"],
+        ["3. 评论正文检查", report.emptyContent, "删除正文为空或只有空白字符的记录。"],
+        ["4. 评论 ID 去重", report.duplicateId, "相同 review_id 只保留第一次出现的记录。"],
+        ["5. 评论正文去重", report.duplicateContent, "忽略大小写和多余空白后，相同正文只保留一条。"]
+      ];
+      document.querySelector("#cleaning-rows").innerHTML = cleaningRows.map(row =>
+        `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td></tr>`
+      ).join("");
       document.querySelector("#raw").textContent = raw.length;
       document.querySelector("#valid").textContent = cleaned.length;
       document.querySelector("#removed").textContent = raw.length - cleaned.length;
