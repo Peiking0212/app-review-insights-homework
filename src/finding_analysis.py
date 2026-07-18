@@ -34,14 +34,40 @@ class FindingGenerationError(RuntimeError):
     """Finding 无法在证据约束下安全生成。"""
 
 
-class IncompleteFindingCoverageError(FindingGenerationError):
+class RepairableFindingDraftError(FindingGenerationError):
+    """Finding 草稿可通过一次局部替换和补分析安全修复。"""
+
+    def __init__(
+        self,
+        message: str,
+        target_topic_ids: Sequence[str],
+        target_insight_ids: Sequence[str],
+        invalid_candidate_ids: Sequence[str] = (),
+    ) -> None:
+        self.target_topic_ids = list(target_topic_ids)
+        self.target_insight_ids = list(target_insight_ids)
+        self.invalid_candidate_ids = list(invalid_candidate_ids)
+        super().__init__(message)
+
+
+class IncompleteFindingCoverageError(RepairableFindingDraftError):
     """Finding 草稿只有 Topic 遗漏，可进入一次有限补分析。"""
 
-    def __init__(self, missing_topic_ids: Sequence[str]) -> None:
+    def __init__(
+        self,
+        missing_topic_ids: Sequence[str],
+        missing_insight_ids: Sequence[str] = (),
+    ) -> None:
         self.missing_topic_ids = list(missing_topic_ids)
         super().__init__(
-            "以下 Topic 未被分析：" + ", ".join(self.missing_topic_ids)
+            "以下 Topic 未被分析：" + ", ".join(self.missing_topic_ids),
+            target_topic_ids=self.missing_topic_ids,
+            target_insight_ids=missing_insight_ids,
         )
+
+
+class InvalidFindingEvidenceError(RepairableFindingDraftError):
+    """候选证据角色错误，可与遗漏 Topic 一起进行一次有限修复。"""
 
 
 @dataclass(frozen=True)
@@ -209,7 +235,10 @@ def apply_finding_quality_gate(
         topic_result
     )
     valid_insight_ids = set(insight_by_id)
-    errors: list[str] = []
+    fatal_errors: list[str] = []
+    repairable_errors: list[str] = []
+    invalid_candidate_ids: list[str] = []
+    invalid_candidate_insight_ids: set[str] = set()
     covered_topic_ids: set[str] = set()
 
     for candidate in draft.candidates:
@@ -218,14 +247,11 @@ def apply_finding_quality_gate(
         )
         invalid_insights = sorted(cited_insight_ids - valid_insight_ids)
         if invalid_insights:
-            errors.append(
+            fatal_errors.append(
                 f"{candidate.candidate_id} 引用了不存在的 Insight："
                 + ", ".join(invalid_insights)
             )
             continue
-        covered_topic_ids.update(
-            topic_by_insight[insight_id] for insight_id in cited_insight_ids
-        )
         invalid_support = sorted(
             insight_id
             for insight_id in candidate.supporting_insight_ids
@@ -248,31 +274,40 @@ def apply_finding_quality_gate(
             (support_review_ids | conflict_review_ids) - valid_review_ids
         )
         overlapping_reviews = sorted(support_review_ids & conflict_review_ids)
+        candidate_repairable_errors: list[str] = []
         if invalid_support:
-            errors.append(
+            candidate_repairable_errors.append(
                 f"{candidate.candidate_id} 的支持 Insight 不是 negative 或 mixed："
                 + ", ".join(invalid_support)
             )
         if invalid_conflicts:
-            errors.append(
+            candidate_repairable_errors.append(
                 f"{candidate.candidate_id} 的冲突 Insight 不是 positive 或 mixed："
                 + ", ".join(invalid_conflicts)
             )
         if invalid_reviews:
-            errors.append(
+            fatal_errors.append(
                 f"{candidate.candidate_id} 推导出不存在的 Review："
                 + ", ".join(invalid_reviews)
             )
         if overlapping_reviews:
-            errors.append(
+            candidate_repairable_errors.append(
                 f"{candidate.candidate_id} 的同一 Review 同时支持和冲突："
                 + ", ".join(overlapping_reviews)
+            )
+        if candidate_repairable_errors and not invalid_reviews:
+            invalid_candidate_ids.append(candidate.candidate_id)
+            invalid_candidate_insight_ids.update(cited_insight_ids)
+            repairable_errors.extend(candidate_repairable_errors)
+        elif not invalid_reviews:
+            covered_topic_ids.update(
+                topic_by_insight[insight_id] for insight_id in cited_insight_ids
             )
 
     for discovery in draft.discovery_candidates:
         invalid_insights = sorted(set(discovery.insight_ids) - valid_insight_ids)
         if invalid_insights:
-            errors.append(
+            fatal_errors.append(
                 "Discovery 引用了不存在的 Insight："
                 + ", ".join(invalid_insights)
             )
@@ -286,18 +321,49 @@ def apply_finding_quality_gate(
         }
         invalid_reviews = sorted(discovery_review_ids - valid_review_ids)
         if invalid_reviews:
-            errors.append(
+            fatal_errors.append(
                 "Discovery 推导出不存在的 Review："
                 + ", ".join(invalid_reviews)
             )
 
     uncovered_topics = sorted(valid_topic_ids - covered_topic_ids)
+    uncovered_insight_ids = {
+        insight_id
+        for topic in topic_result.topics
+        if topic.topic_id in set(uncovered_topics)
+        for insight_id in topic.insight_ids
+    }
+    invalid_candidate_topic_ids = {
+        topic_by_insight[insight_id]
+        for insight_id in invalid_candidate_insight_ids
+    }
+    repair_topic_ids = sorted(
+        set(uncovered_topics) | invalid_candidate_topic_ids
+    )
+    if fatal_errors:
+        if uncovered_topics:
+            fatal_errors.append(
+                "以下 Topic 未被分析：" + ", ".join(uncovered_topics)
+            )
+        raise FindingGenerationError("；".join(fatal_errors))
+    if invalid_candidate_ids:
+        message_parts = [*repairable_errors]
+        if uncovered_topics:
+            message_parts.append(
+                "以下 Topic 未被分析：" + ", ".join(uncovered_topics)
+            )
+        raise InvalidFindingEvidenceError(
+            "；".join(message_parts),
+            target_topic_ids=repair_topic_ids,
+            target_insight_ids=sorted(
+                invalid_candidate_insight_ids | uncovered_insight_ids
+            ),
+            invalid_candidate_ids=invalid_candidate_ids,
+        )
     if uncovered_topics:
-        if not errors:
-            raise IncompleteFindingCoverageError(uncovered_topics)
-        errors.append("以下 Topic 未被分析：" + ", ".join(uncovered_topics))
-    if errors:
-        raise FindingGenerationError("；".join(errors))
+        raise IncompleteFindingCoverageError(
+            uncovered_topics, sorted(uncovered_insight_ids)
+        )
 
     findings: list[Finding] = []
     discovery_items: list[DiscoveryItem] = []
@@ -392,19 +458,22 @@ def merge_finding_repair(
     original: FindingDraft,
     repair: FindingDraft,
     topic_result: TopicDiscoveryResult,
-    missing_topic_ids: Sequence[str],
+    target_topic_ids: Sequence[str],
+    target_insight_ids: Sequence[str] | None = None,
+    invalid_candidate_ids: Sequence[str] = (),
 ) -> FindingDraft:
-    """只合并遗漏 Topic 的一次补分析，并拒绝越界 Insight。"""
-    missing_topic_id_set = set(missing_topic_ids)
+    """替换错误候选并补齐遗漏 Topic，拒绝修复范围外的 Insight。"""
+    target_topic_id_set = set(target_topic_ids)
+    invalid_candidate_id_set = set(invalid_candidate_ids)
     insight_to_topic = {
         insight_id: topic.topic_id
         for topic in topic_result.topics
         for insight_id in topic.insight_ids
     }
-    allowed_insight_ids = {
+    allowed_insight_ids = set(target_insight_ids or ()) or {
         insight_id
         for insight_id, topic_id in insight_to_topic.items()
-        if topic_id in missing_topic_id_set
+        if topic_id in target_topic_id_set
     }
     cited_insight_ids = {
         insight_id
@@ -424,38 +493,56 @@ def merge_finding_repair(
         for insight_id in cited_insight_ids
         if insight_id in insight_to_topic
     }
-    still_missing_topic_ids = sorted(
-        missing_topic_id_set - covered_topic_ids
-    )
+    still_missing_topic_ids = sorted(target_topic_id_set - covered_topic_ids)
     errors: list[str] = []
     if invalid_insight_ids:
         errors.append(
-            "Finding 补分析引用了非遗漏 Topic 的 Insight："
+            "Finding 综合修复引用了非遗漏 Topic 或修复范围外 Insight："
             + ", ".join(invalid_insight_ids)
         )
     if still_missing_topic_ids:
         errors.append(
-            "Finding 补分析后仍有 Topic 未被分析："
+            "Finding 综合修复后仍有 Topic 未被分析："
             + ", ".join(still_missing_topic_ids)
         )
     if errors:
         raise FindingGenerationError("；".join(errors))
 
-    normalized_repair_candidates = [
-        candidate.model_copy(
-            update={"candidate_id": f"CAND-REPAIR-{index:03d}"}
-        )
-        for index, candidate in enumerate(repair.candidates, start=1)
+    retained_candidates = [
+        candidate
+        for candidate in original.candidates
+        if candidate.candidate_id not in invalid_candidate_id_set
     ]
+    used_candidate_ids = {candidate.candidate_id for candidate in retained_candidates}
+    normalized_repair_candidates = []
+    next_index = 1
+    for candidate in repair.candidates:
+        while f"CAND-REPAIR-{next_index:03d}" in used_candidate_ids:
+            next_index += 1
+        candidate_id = f"CAND-REPAIR-{next_index:03d}"
+        used_candidate_ids.add(candidate_id)
+        normalized_repair_candidates.append(
+            candidate.model_copy(update={"candidate_id": candidate_id})
+        )
+        next_index += 1
+    repair_summary = (
+        f"Finding 有限补分析覆盖了 {len(target_topic_id_set)} 个遗漏 Topic。"
+        if not invalid_candidate_id_set
+        else (
+            "Finding 综合有限修复替换了 "
+            f"{len(invalid_candidate_id_set)} 个错误候选，并覆盖 "
+            f"{len(target_topic_id_set)} 个相关或遗漏 Topic。"
+        )
+    )
     return FindingDraft(
-        candidates=[*original.candidates, *normalized_repair_candidates],
+        candidates=[*retained_candidates, *normalized_repair_candidates],
         discovery_candidates=[
             *original.discovery_candidates,
             *repair.discovery_candidates,
         ],
         limitations=[
             *original.limitations,
-            f"Finding 有限补分析覆盖了 {len(missing_topic_id_set)} 个遗漏 Topic。",
+            repair_summary,
             *repair.limitations,
         ],
     )
@@ -511,7 +598,7 @@ class FindingAnalysisService:
             return apply_finding_quality_gate(
                 draft, topic_result, valid_review_ids
             )
-        except IncompleteFindingCoverageError as incomplete_error:
+        except RepairableFindingDraftError as repairable_error:
             try:
                 repair = client.chat.completions.create(
                     model=self.config.model,
@@ -519,8 +606,11 @@ class FindingAnalysisService:
                     messages=build_finding_repair_messages(
                         reviews,
                         topic_result,
-                        incomplete_error.missing_topic_ids,
+                        repairable_error.target_topic_ids,
                         analysis_goal,
+                        draft=draft,
+                        target_insight_ids=repairable_error.target_insight_ids,
+                        invalid_candidate_ids=repairable_error.invalid_candidate_ids,
                     ),
                     max_retries=1,
                     **build_model_request_options(self.config),
@@ -529,7 +619,9 @@ class FindingAnalysisService:
                     draft,
                     repair,
                     topic_result,
-                    incomplete_error.missing_topic_ids,
+                    repairable_error.target_topic_ids,
+                    repairable_error.target_insight_ids,
+                    repairable_error.invalid_candidate_ids,
                 )
                 return apply_finding_quality_gate(
                     repaired_draft, topic_result, valid_review_ids
@@ -538,7 +630,7 @@ class FindingAnalysisService:
                 raise
             except Exception as error:
                 raise FindingGenerationError(
-                    "遗漏 Topic 有限补分析的模型调用或结构化输出失败，"
+                    "Finding 综合有限修复的模型调用或结构化输出失败，"
                     "Finding 阶段已停止。"
                     f"服务商返回：{safe_provider_error(error, self.config.api_key)}"
                 ) from error

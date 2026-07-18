@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 
-from src.schemas import Review, TopicDiscoveryResult
+from src.schemas import FindingDraft, Review, TopicDiscoveryResult
 
 
 FINDING_SYSTEM_PROMPT = """
@@ -28,16 +28,17 @@ FINDING_SYSTEM_PROMPT = """
 
 
 FINDING_REPAIR_SYSTEM_PROMPT = """
-你是证据审慎的 App 产品研究员。上一轮 Finding 草稿遗漏了少量 Topic，当前只执行一次有限补分析。
+你是证据审慎的 App 产品研究员。上一轮 Finding 草稿存在证据角色错误或遗漏 Topic，当前只执行一次综合有限修复。
 
 规则：
-1. 只分析 missing_topics；每个 Topic 必须至少由一个 Finding Candidate 或 Discovery Candidate 覆盖。
-2. 只能引用 missing_topics 中提供的 Insight ID，不得引用或改写其他 Insight。
-3. supporting 只能使用 negative 或 mixed；conflicting 只能使用 positive 或 mixed。
-4. 证据不足、主要为正面或与目标关系弱时放入 discovery_candidates，不得强行升级为 Finding。
-5. 每个 Insight 在本次结果中最多出现一次，不生成 Review ID、Topic ID、数量或置信度。
-6. candidate_id 使用 CAND-REPAIR-001 起的唯一 ID；最终候选 ID 仍会由 Python 规范化。
-7. 不生成版本规划、需求、PRD 或测试用例。
+1. 只处理 repair_topics 和 repair_insights；每个 repair Topic 必须至少由一个 Finding Candidate 或 Discovery Candidate 覆盖。
+2. invalid_candidates 必须被重新判断证据角色；输出是替代结果，不得照抄其中的错误分组。
+3. 只能引用 repair_insights 中提供的 Insight ID，不得引用或改写其他 Insight。
+4. supporting 只能使用 negative 或 mixed；conflicting 只能使用 positive 或 mixed。
+5. 证据不足、主要为正面或与目标关系弱时放入 discovery_candidates，不得强行升级为 Finding。
+6. 每个 Insight 在本次结果中最多出现一次，不生成 Review ID、Topic ID、数量或置信度。
+7. candidate_id 使用 CAND-REPAIR-001 起的唯一 ID；最终候选 ID 仍会由 Python 规范化。
+8. 不生成版本规划、需求、PRD 或测试用例。
 """.strip()
 
 
@@ -83,33 +84,41 @@ def build_finding_messages(
 def build_finding_repair_messages(
     reviews: Sequence[Review],
     topic_result: TopicDiscoveryResult,
-    missing_topic_ids: Sequence[str],
+    target_topic_ids: Sequence[str],
     analysis_goal: str,
+    draft: FindingDraft | None = None,
+    target_insight_ids: Sequence[str] | None = None,
+    invalid_candidate_ids: Sequence[str] = (),
 ) -> list[dict[str, str]]:
-    """只发送遗漏 Topic 及其 Insight、Review，执行一次最小补分析。"""
-    missing_topic_id_set = set(missing_topic_ids)
-    missing_topics = [
+    """只发送错误候选和相关证据，执行一次综合有限修复。"""
+    target_topic_id_set = set(target_topic_ids)
+    repair_topics = [
         topic
         for topic in topic_result.topics
-        if topic.topic_id in missing_topic_id_set
+        if topic.topic_id in target_topic_id_set
     ]
-    missing_insight_ids = {
-        insight_id
-        for topic in missing_topics
-        for insight_id in topic.insight_ids
+    repair_insight_id_set = set(target_insight_ids or ()) or {
+        insight_id for topic in repair_topics for insight_id in topic.insight_ids
     }
-    missing_insights = [
+    repair_insights = [
         insight
         for insight in topic_result.insights
-        if insight.insight_id in missing_insight_ids
+        if insight.insight_id in repair_insight_id_set
     ]
-    missing_review_ids = {insight.review_id for insight in missing_insights}
+    repair_review_ids = {insight.review_id for insight in repair_insights}
+    invalid_candidate_id_set = set(invalid_candidate_ids)
+    invalid_candidates = [
+        candidate.model_dump(mode="json")
+        for candidate in (draft.candidates if draft else [])
+        if candidate.candidate_id in invalid_candidate_id_set
+    ]
     payload = {
         "analysis_goal": analysis_goal.strip()
         or "发现有证据支持的主要用户问题",
-        "missing_topics": [topic.model_dump(mode="json") for topic in missing_topics],
-        "missing_insights": [
-            insight.model_dump(mode="json") for insight in missing_insights
+        "invalid_candidates": invalid_candidates,
+        "repair_topics": [topic.model_dump(mode="json") for topic in repair_topics],
+        "repair_insights": [
+            insight.model_dump(mode="json") for insight in repair_insights
         ],
         "source_reviews": [
             {
@@ -119,7 +128,7 @@ def build_finding_repair_messages(
                 "content": review.content,
             }
             for review in reviews
-            if review.review_id in missing_review_ids
+            if review.review_id in repair_review_ids
         ],
     }
     return [
@@ -127,7 +136,7 @@ def build_finding_repair_messages(
         {
             "role": "user",
             "content": (
-                "请只补分析以下 missing_topics。输出前确认每个 Topic 至少被覆盖，"
+                "请只修复以下范围。输出前确认每个 repair Topic 至少被覆盖，"
                 "且没有引用输入之外的 Insight：\n"
                 + json.dumps(payload, ensure_ascii=False, indent=2)
             ),

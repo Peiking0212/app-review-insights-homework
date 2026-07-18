@@ -8,8 +8,10 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 from hashlib import sha256
+from html import escape
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 from pydantic import ValidationError
@@ -70,6 +72,442 @@ PAGE_SECTIONS = (
 )
 
 
+def render_editorial_theme() -> None:
+    """应用黑白编辑风设计令牌，不改变任何业务逻辑。"""
+    st.markdown(
+        """
+        <style>
+        :root {
+            --rs-ink: #111217;
+            --rs-muted: #727782;
+            --rs-canvas: #f3f5f7;
+            --rs-surface: #ffffff;
+            --rs-soft: #f7f8fa;
+            --rs-line: #e5e7eb;
+            --rs-radius: 20px;
+        }
+        html, body, .stApp {
+            font-family: Inter, Manrope, "PingFang SC", "Microsoft YaHei",
+                system-ui, sans-serif;
+        }
+        .stApp {
+            background: var(--rs-canvas);
+            color: var(--rs-ink);
+        }
+        [data-testid="stAppViewBlockContainer"] {
+            max-width: 1440px;
+            padding-top: 5rem;
+            padding-bottom: 4rem;
+        }
+        [data-testid="stSidebar"] {
+            min-width: 280px;
+            max-width: 280px;
+            background: #fbfbfa;
+            border-right: 1px solid var(--rs-line);
+        }
+        [data-testid="stSidebar"] > div:first-child {
+            padding-top: 1.25rem;
+        }
+        h1, h2, h3 {
+            color: var(--rs-ink);
+            letter-spacing: -0.025em;
+        }
+        h1 {
+            font-size: clamp(2rem, 3vw, 2.75rem) !important;
+            font-weight: 780 !important;
+            line-height: 1.08 !important;
+        }
+        h2, [data-testid="stHeadingWithActionElements"] h2 {
+            font-size: 1.45rem !important;
+            font-weight: 720 !important;
+        }
+        h3, [data-testid="stHeadingWithActionElements"] h3 {
+            font-size: 1.08rem !important;
+            font-weight: 680 !important;
+        }
+        p, label, [data-testid="stCaptionContainer"] {
+            line-height: 1.65;
+        }
+        [data-testid="stCaptionContainer"] {
+            color: var(--rs-muted);
+        }
+        [data-testid="stMetric"] {
+            min-height: 116px;
+            padding: 1rem 1.15rem;
+            background: var(--rs-surface);
+            border: 1px solid var(--rs-line);
+            border-radius: var(--rs-radius);
+            box-shadow: 0 10px 28px rgba(17, 18, 23, 0.035);
+        }
+        [data-testid="stMetricValue"] {
+            color: var(--rs-ink);
+            font-size: 2rem;
+            font-weight: 760;
+            letter-spacing: -0.035em;
+        }
+        [data-testid="stMetricLabel"] {
+            color: var(--rs-muted);
+            font-size: 0.78rem;
+            font-weight: 650;
+            letter-spacing: 0.02em;
+        }
+        .stButton > button,
+        .stDownloadButton > button {
+            min-height: 2.65rem;
+            padding: 0.55rem 1.1rem;
+            border: 1px solid #d9dce1;
+            border-radius: 999px;
+            background: #ffffff;
+            color: var(--rs-ink);
+            font-weight: 680;
+            box-shadow: none;
+        }
+        .stButton > button:hover,
+        .stDownloadButton > button:hover {
+            border-color: var(--rs-ink);
+            color: var(--rs-ink);
+        }
+        .stButton > button[kind="primary"] {
+            background: var(--rs-ink);
+            border-color: var(--rs-ink);
+            color: #ffffff;
+        }
+        [data-testid="stAlert"] {
+            border: 1px solid var(--rs-line);
+            border-radius: 16px;
+            box-shadow: none;
+        }
+        [data-testid="stExpander"] {
+            overflow: hidden;
+            margin-bottom: 0.85rem;
+            background: var(--rs-surface);
+            border: 1px solid var(--rs-line);
+            border-radius: var(--rs-radius);
+            box-shadow: 0 10px 28px rgba(17, 18, 23, 0.025);
+        }
+        [data-testid="stDataFrame"] {
+            overflow: hidden;
+            border: 1px solid var(--rs-line);
+            border-radius: 16px;
+        }
+        blockquote {
+            margin: 0.65rem 0 !important;
+            padding: 0.85rem 1rem !important;
+            background: var(--rs-soft);
+            border-left: 3px solid var(--rs-ink) !important;
+            border-radius: 0 14px 14px 0;
+            color: #33363d !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stRadio"] label {
+            padding: 0.55rem 0.7rem;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+        [data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
+            display: none;
+        }
+        [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+            background: var(--rs-ink);
+            color: #ffffff;
+        }
+        [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) p,
+        [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) span {
+            color: #ffffff !important;
+        }
+        [data-testid="stIconMaterial"] {
+            font-family: "Material Symbols Rounded", "Material Symbols Outlined" !important;
+            font-weight: normal !important;
+            font-style: normal !important;
+            line-height: 1 !important;
+            letter-spacing: normal !important;
+            text-transform: none !important;
+            white-space: nowrap !important;
+            word-wrap: normal !important;
+        }
+        #MainMenu,
+        footer,
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"] {
+            display: none !important;
+        }
+        .rs-status-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            margin: 1.15rem 0 1.35rem;
+            padding: 0.2rem 0;
+            background: var(--rs-surface);
+            border: 1px solid var(--rs-line);
+            border-radius: 16px;
+        }
+        .rs-status-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 44px;
+            padding: 0 1rem;
+            color: #42464f;
+            font-size: 0.84rem;
+            font-weight: 620;
+        }
+        .rs-status-item + .rs-status-item {
+            border-left: 1px solid var(--rs-line);
+        }
+        .rs-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--rs-ink);
+        }
+        .rs-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin: 0.45rem 0 1rem;
+        }
+        .rs-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0.15rem 0.7rem;
+            border: 1px solid var(--rs-line);
+            border-radius: 999px;
+            background: var(--rs-soft);
+            color: #4b4f58;
+            font-size: 0.75rem;
+            font-weight: 650;
+        }
+        .rs-chip--strong {
+            background: var(--rs-soft);
+            border-color: var(--rs-line);
+            color: #4b4f58;
+        }
+        .rs-pipeline {
+            min-height: 360px;
+            padding: 1.15rem 1.25rem;
+            background: var(--rs-surface);
+            border: 1px solid var(--rs-line);
+            border-radius: var(--rs-radius);
+            box-shadow: 0 10px 28px rgba(17, 18, 23, 0.025);
+        }
+        .rs-pipeline-step {
+            display: grid;
+            grid-template-columns: 28px 1fr auto;
+            gap: 0.7rem;
+            align-items: center;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid #eff0f2;
+        }
+        .rs-pipeline-step:last-child { border-bottom: 0; }
+        .rs-step-icon {
+            display: grid;
+            width: 26px;
+            height: 26px;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--rs-ink);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+        .rs-step-title { font-size: 0.88rem; font-weight: 680; }
+        .rs-step-meta { color: var(--rs-muted); font-size: 0.74rem; }
+        .rs-step-state { color: var(--rs-muted); font-size: 0.72rem; }
+        .rs-summary-panel {
+            margin: 0.6rem 0 1.25rem;
+            padding: 1rem 1.15rem;
+            background: var(--rs-surface);
+            border: 1px solid var(--rs-line);
+            border-radius: 16px;
+            color: #3f434b;
+            line-height: 1.75;
+        }
+        .rs-workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.85rem;
+            margin-top: 1rem;
+        }
+        .rs-workflow-card {
+            min-height: 132px;
+            padding: 1rem;
+            background: var(--rs-surface);
+            border: 1px solid var(--rs-line);
+            border-radius: 18px;
+            box-shadow: 0 10px 28px rgba(17, 18, 23, 0.025);
+        }
+        .rs-workflow-index {
+            display: grid;
+            width: 30px;
+            height: 30px;
+            margin-bottom: 0.7rem;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--rs-ink);
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 760;
+        }
+        .rs-workflow-title {
+            color: var(--rs-ink);
+            font-size: 0.92rem;
+            font-weight: 720;
+        }
+        .rs-workflow-copy {
+            margin-top: 0.35rem;
+            color: var(--rs-muted);
+            font-size: 0.76rem;
+            line-height: 1.55;
+        }
+        @media (max-width: 900px) {
+            .rs-status-item + .rs-status-item { border-left: 0; }
+            [data-testid="stMetric"] { min-height: 96px; }
+            .rs-workflow-grid { grid-template-columns: 1fr; }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_editorial_status_strip(
+    demo_mode: bool, collection_report: CollectionReport | None
+) -> None:
+    """用紧凑状态条说明数据来源、运行模式和质量保障。"""
+    source_label = (
+        "真实美国区数据"
+        if collection_report is not None
+        and collection_report.storefront.lower() == "us"
+        else "当前导入数据"
+    )
+    mode_label = "缓存演示模式" if demo_mode else "实时分析模式"
+    quality_label = (
+        "质量门全部通过"
+        if st.session_state.get("test_result")
+        else "确定性质量门已启用"
+    )
+    items = (source_label, mode_label, quality_label)
+    markup = "".join(
+        '<span class="rs-status-item"><span class="rs-status-dot"></span>'
+        + escape(item)
+        + "</span>"
+        for item in items
+    )
+    st.markdown(
+        f'<div class="rs-status-strip">{markup}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _result_count(session_key: str, field: str) -> int | None:
+    """从当前已校验的结构化结果中读取展示数量。"""
+    payload = st.session_state.get(session_key)
+    if not isinstance(payload, dict):
+        return None
+    records = payload.get(field)
+    return len(records) if isinstance(records, list) else None
+
+
+def render_editorial_outcome_summary(cleaned_review_count: int) -> None:
+    """在概览页集中展示 Review 到 TestCase 的核心产出。"""
+    values = (
+        ("评论", cleaned_review_count),
+        ("动态主题", _result_count("topic_result", "topics")),
+        ("核心问题", _result_count("finding_result", "findings")),
+        ("产品需求", _result_count("planning_result", "requirements")),
+        ("测试用例", _result_count("test_result", "test_cases")),
+    )
+    columns = st.columns(5)
+    for column, (label, value) in zip(columns, values):
+        column.metric(label, value if value is not None else "—")
+
+
+def render_editorial_pipeline() -> None:
+    """用确定性状态展示当前分析闭环完成度。"""
+    steps = (
+        ("数据采集", "评论已进入清洗流程", True),
+        ("清洗与去重", "规则审计已完成", True),
+        ("主题提取", "动态主题与原子观点", bool(st.session_state.get("topic_result"))),
+        ("问题识别", "证据 Finding 与冲突观点", bool(st.session_state.get("finding_result"))),
+        ("需求与测试", "PRD 和端到端追溯", bool(st.session_state.get("test_result"))),
+    )
+    rows = []
+    for title, meta, completed in steps:
+        rows.append(
+            '<div class="rs-pipeline-step">'
+            f'<span class="rs-step-icon">{"✓" if completed else "·"}</span>'
+            '<span>'
+            f'<span class="rs-step-title">{escape(title)}</span><br>'
+            f'<span class="rs-step-meta">{escape(meta)}</span>'
+            "</span>"
+            f'<span class="rs-step-state">{"已完成" if completed else "待运行"}</span>'
+            "</div>"
+        )
+    st.markdown(
+        '<div class="rs-pipeline"><strong>分析流水线</strong>'
+        + "".join(rows)
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_editorial_chips(
+    chips: tuple[tuple[str, bool], ...] | list[tuple[str, bool]]
+) -> None:
+    """渲染一组安全转义的黑白摘要标签。"""
+    markup = "".join(
+        '<span class="rs-chip'
+        + (' rs-chip--strong' if strong else '')
+        + f'">{escape(str(label))}</span>'
+        for label, strong in chips
+    )
+    st.markdown(
+        f'<div class="rs-chip-row">{markup}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_editorial_workflow() -> None:
+    """以紧凑卡片展示完整 Homework 工作流。"""
+    stages = (
+        ("数据输入", "示例、美国区采集或 CSV / JSON 导入"),
+        ("确定性清洗", "字段校验、评分校验、空内容过滤与去重"),
+        ("动态主题", "Atomic Insight 提取、主题聚合与引用校验"),
+        ("证据发现", "支持证据、冲突观点、置信度与质量门"),
+        ("版本与 PRD", "需求边界、版本规划、优先级和验收标准"),
+        ("测试与追溯", "正常、异常、边界测试及端到端引用检查"),
+        ("失败恢复", "阶段检查点、同输入恢复和真实缓存降级"),
+        ("真实 Demo", "美国区公开评论和经过质量门的完整快照"),
+        ("结果交付", "可审计的 Review 到 TestCase 产品闭环"),
+    )
+    cards = "".join(
+        '<div class="rs-workflow-card">'
+        f'<span class="rs-workflow-index">{index:02d}</span>'
+        f'<div class="rs-workflow-title">{escape(title)}</div>'
+        f'<div class="rs-workflow-copy">{escape(copy)}</div>'
+        "</div>"
+        for index, (title, copy) in enumerate(stages, start=1)
+    )
+    st.markdown(
+        f'<div class="rs-workflow-grid">{cards}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def keep_page_selected(page: str) -> None:
+    """在阶段按钮触发整页重跑前，把当前结果页同步到侧栏导航。"""
+    if page not in PAGE_SECTIONS:
+        raise ValueError(f"未知页面：{page}")
+    st.session_state["page_navigation"] = page
+
+
+def sync_top_page_selection() -> None:
+    """把顶部可控导航的选择同步到侧栏和阶段按钮共用的状态。"""
+    page = st.session_state.get("top_page_navigation")
+    if page in PAGE_SECTIONS:
+        st.session_state["page_navigation"] = page
+
+
 def render_back_to_top() -> None:
     """提供始终可见的一键回到顶部入口。"""
     st.markdown('<div id="page-top"></div>', unsafe_allow_html=True)
@@ -91,8 +529,8 @@ def render_back_to_top() -> None:
             font-size: 0.9rem;
         }
         .back-to-top:hover {
-            border-color: #ff4b4b;
-            color: #ff4b4b !important;
+            border-color: #111217;
+            color: #111217 !important;
         }
         </style>
         <a class="back-to-top" href="#page-top" target="_self"
@@ -560,14 +998,23 @@ def render_topic_result(
     st.subheader("动态主题")
     if not result.topics:
         st.info("当前评论没有形成可用主题；请查看 OTHER 和数据限制。")
-    for topic in result.topics:
-        with st.expander(f"{topic.topic_id} · {topic.name}", expanded=True):
+    for index, topic in enumerate(result.topics):
+        topic_review_ids = {
+            insight_by_id[insight_id].review_id
+            for insight_id in topic.insight_ids
+            if insight_id in insight_by_id
+        }
+        with st.expander(
+            f"{topic.topic_id} · {topic.name}", expanded=index == 0
+        ):
+            render_editorial_chips(
+                [
+                    (f"{len(topic.insight_ids)} 条原子观点", index == 0),
+                    (f"{len(topic_review_ids)} 条去重评论", False),
+                    (f"{len(topic.representative_review_ids)} 条代表评论", False),
+                ]
+            )
             st.write(topic.description)
-            topic_review_ids = {
-                insight_by_id[insight_id].review_id
-                for insight_id in topic.insight_ids
-                if insight_id in insight_by_id
-            }
             st.caption(
                 f"包含 {len(topic.insight_ids)} 条原子观点；"
                 f"涉及 {len(topic_review_ids)} 条去重评论；"
@@ -580,22 +1027,22 @@ def render_topic_result(
                     f"\n> {review['content']}"
                 )
 
-    st.subheader("Atomic Insights（原子观点）")
-    st.dataframe(
-        pd.DataFrame(
-            [
-                {
-                    "Insight ID": insight.insight_id,
-                    "Review ID": insight.review_id,
-                    "情绪": insight.sentiment,
-                    "原子观点": insight.statement,
-                }
-                for insight in result.insights
-            ]
-        ),
-        width="stretch",
-        hide_index=True,
-    )
+    with st.expander(f"查看全部 {len(result.insights)} 条 Atomic Insights"):
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    {
+                        "Insight ID": insight.insight_id,
+                        "Review ID": insight.review_id,
+                        "情绪": insight.sentiment,
+                        "原子观点": insight.statement,
+                    }
+                    for insight in result.insights
+                ]
+            ),
+            width="stretch",
+            hide_index=True,
+        )
 
     if result.other_review_ids:
         st.subheader("OTHER / 无法判断")
@@ -616,7 +1063,7 @@ def render_finding_result(
     quality = calculate_finding_quality(
         result, topic_result, set(review_by_id)
     )
-    st.subheader("Finding Quality · Groundedness Score")
+    st.subheader("证据质量 · Finding Quality")
     coverage_column, traceability_column, unsupported_column, conflict_column = (
         st.columns(4)
     )
@@ -653,22 +1100,43 @@ def render_finding_result(
 
     if not result.findings:
         st.info("当前没有达到最小证据门槛的问题，请查看 Discovery。")
-    for finding in result.findings:
+    for index, finding in enumerate(result.findings):
         with st.expander(
-            f"{finding.finding_id} · {finding.title}", expanded=True
+            f"{finding.finding_id} · {finding.title}", expanded=index == 0
         ):
+            severity_labels = {
+                "high": "高严重度",
+                "medium": "中严重度",
+                "low": "低严重度",
+            }
+            confidence_labels = {
+                "high": "高置信度",
+                "medium": "中置信度",
+                "low": "低置信度",
+            }
+            severity_label = severity_labels.get(
+                str(finding.severity).lower(), str(finding.severity)
+            )
+            confidence_label = confidence_labels.get(
+                str(finding.confidence).lower(), str(finding.confidence)
+            )
+            chips = (
+                (severity_label, True),
+                (confidence_label, False),
+                (f"{len(set(finding.supporting_review_ids))} 条支持评论", False),
+                (f"{len(set(finding.conflicting_review_ids))} 条冲突证据", False),
+            )
+            chip_markup = "".join(
+                '<span class="rs-chip'
+                + (' rs-chip--strong' if strong else '')
+                + f'">{escape(label)}</span>'
+                for label, strong in chips
+            )
+            st.markdown(
+                f'<div class="rs-chip-row">{chip_markup}</div>',
+                unsafe_allow_html=True,
+            )
             st.write(finding.description)
-            severity_column, confidence_column, evidence_column, conflict_column = (
-                st.columns(4)
-            )
-            severity_column.metric("严重度", finding.severity)
-            confidence_column.metric("置信度", finding.confidence)
-            evidence_column.metric(
-                "支持评论", len(set(finding.supporting_review_ids))
-            )
-            conflict_column.metric(
-                "冲突评论", len(set(finding.conflicting_review_ids))
-            )
             st.caption(
                 "来源 Topic：" + "、".join(finding.source_topic_ids)
             )
@@ -744,11 +1212,23 @@ def render_product_plan(
     hypothesis_column.metric("产品假设", len(result.product_hypotheses))
 
     st.subheader(result.prd_title)
-    st.write(result.executive_summary)
+    st.markdown(
+        f'<div class="rs-summary-panel">{escape(result.executive_summary)}</div>',
+        unsafe_allow_html=True,
+    )
 
     st.subheader("版本路线图")
-    for release in result.releases:
-        with st.expander(f"{release.release} · {release.objective}", expanded=True):
+    for index, release in enumerate(result.releases):
+        with st.expander(
+            f"{release.release} · {release.objective}", expanded=index == 0
+        ):
+            render_editorial_chips(
+                [
+                    (release.release, index == 0),
+                    (f"{len(release.requirement_ids)} 条需求", False),
+                    (f"{len(release.risks)} 项风险", False),
+                ]
+            )
             st.write(release.rationale)
             st.caption("包含需求：" + "、".join(release.requirement_ids))
             if release.risks:
@@ -757,13 +1237,19 @@ def render_product_plan(
                     st.markdown(f"- {risk}")
 
     st.subheader("PRD 需求")
-    for requirement in result.requirements:
+    for index, requirement in enumerate(result.requirements):
         with st.expander(
-            f"{requirement.requirement_id} · {requirement.title}", expanded=True
+            f"{requirement.requirement_id} · {requirement.title}",
+            expanded=index == 0,
         ):
-            release_column, priority_column = st.columns(2)
-            release_column.metric("所属版本", requirement.release)
-            priority_column.metric("Python 计算优先级", requirement.priority)
+            render_editorial_chips(
+                [
+                    (requirement.priority, True),
+                    (requirement.release, False),
+                    (f"{len(requirement.source_finding_ids)} 个 Finding", False),
+                    (f"{len(requirement.source_review_ids)} 条来源评论", False),
+                ]
+            )
             st.write(requirement.description)
             st.caption(
                 "来源 Finding："
@@ -836,7 +1322,7 @@ def render_test_result(
     quality = calculate_traceability_quality(
         result, finding_result, plan_result, valid_review_ids
     )
-    st.subheader("Test Quality · Traceability Gate")
+    st.subheader("测试质量 · Test Quality")
     requirement_column, scenario_column, traceability_column, invalid_column = (
         st.columns(4)
     )
@@ -864,14 +1350,19 @@ def render_test_result(
         st.error("Traceability Quality Gate：未通过，结果不得进入最终交付。")
 
     st.subheader("测试用例")
-    for test_case in result.test_cases:
+    for index, test_case in enumerate(result.test_cases):
         with st.expander(
-            f"{test_case.test_case_id} · {test_case.title}", expanded=True
+            f"{test_case.test_case_id} · {test_case.title}",
+            expanded=index == 0,
         ):
-            requirement_column, type_column, priority_column = st.columns(3)
-            requirement_column.metric("Requirement", test_case.requirement_id)
-            type_column.metric("场景类型", test_case.test_type)
-            priority_column.metric("优先级", test_case.priority)
+            render_editorial_chips(
+                [
+                    (test_case.priority, True),
+                    (test_case.test_type, False),
+                    (test_case.requirement_id, False),
+                    (f"{len(test_case.source_review_ids)} 条来源评论", False),
+                ]
+            )
             st.caption("来源 Review：" + "、".join(test_case.source_review_ids))
             st.markdown("**前置条件**")
             if test_case.preconditions:
@@ -922,8 +1413,9 @@ def main() -> None:
         layout="wide",
     )
 
+    render_editorial_theme()
     render_back_to_top()
-    st.title("🔎 ReviewScope AI")
+    st.title("ReviewScope AI")
     st.caption("把真实用户评论转化为可执行产品改进方案")
 
     try:
@@ -984,35 +1476,67 @@ def main() -> None:
         render_sidebar_checkpoint_recovery(current_fingerprint)
     selected_page = render_page_navigation()
 
-    if collection_report is not None:
-        render_collection_report(collection_report)
-
-    st.subheader("本次目标")
-    st.info(analysis_goal)
-
-    metric_1, metric_2, metric_3, metric_4 = st.columns(4)
-    metric_1.metric("原始评论", len(raw_reviews))
-    metric_2.metric("有效评论", len(cleaned_reviews))
-    metric_3.metric("清洗移除", cleaning_report.removed_count)
+    render_editorial_status_strip(demo_mode, collection_report)
     average_rating = cleaned_reviews["rating"].mean()
-    metric_4.metric(
-        "平均评分",
-        f"{average_rating:.1f}" if pd.notna(average_rating) else "暂无",
+
+    if st.session_state.get("top_page_navigation") != selected_page:
+        st.session_state["top_page_navigation"] = selected_page
+    st.markdown(
+        """
+        <style>
+        .st-key-top_page_navigation_bar [data-testid="stRadio"] > div {
+            gap: 0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+        }
+        .st-key-top_page_navigation_bar [data-testid="stRadio"] label {
+            padding: 0.65rem 0.75rem;
+            margin: 0;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+        .st-key-top_page_navigation_bar [data-testid="stRadio"] label:has(input:checked) {
+            color: #111217;
+            border-bottom-color: #111217;
+            font-weight: 700;
+        }
+        .st-key-top_page_navigation_bar [data-testid="stRadio"] label > div:first-child {
+            display: none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
+    with st.container(key="top_page_navigation_bar"):
+        st.radio(
+            "页面导航",
+            PAGE_SECTIONS,
+            key="top_page_navigation",
+            on_change=sync_top_page_selection,
+            horizontal=True,
+            label_visibility="collapsed",
+        )
 
-    (
-        overview_tab,
-        cleaning_tab,
-        reviews_tab,
-        topics_tab,
-        findings_tab,
-        planning_tab,
-        tests_tab,
-        workflow_tab,
-    ) = st.tabs(PAGE_SECTIONS, default=selected_page)
+    if selected_page == "数据概览":
+        if collection_report is not None:
+            render_collection_report(collection_report)
 
-    with overview_tab:
-        st.subheader("评分分布")
+        st.subheader("本次目标")
+        st.markdown(
+            f'<div class="rs-summary-panel">{escape(analysis_goal)}</div>',
+            unsafe_allow_html=True,
+        )
+        metric_1, metric_2, metric_3, metric_4 = st.columns(4)
+        metric_1.metric("原始评论", len(raw_reviews))
+        metric_2.metric("有效评论", len(cleaned_reviews))
+        metric_3.metric("清洗移除", cleaning_report.removed_count)
+        metric_4.metric(
+            "平均评分",
+            f"{average_rating:.1f}" if pd.notna(average_rating) else "暂无",
+        )
+
+        st.subheader("分析结果概览")
+        render_editorial_outcome_summary(len(cleaned_reviews))
+        st.write("")
         rating_counts = (
             cleaned_reviews["rating"]
             .value_counts()
@@ -1020,16 +1544,66 @@ def main() -> None:
             .rename_axis("评分")
             .rename("评论数量")
         )
-        st.bar_chart(rating_counts)
-        st.caption("图表和数量由 Python 根据当前评论计算。")
+        rating_chart_data = rating_counts.reset_index()
+        rating_chart = (
+            alt.Chart(rating_chart_data)
+            .mark_bar(color="#111217", cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+            .encode(
+                x=alt.X(
+                    "评分:O",
+                    title=None,
+                    sort=[1, 2, 3, 4, 5],
+                    axis=alt.Axis(labelAngle=0),
+                ),
+                y=alt.Y("评论数量:Q", title=None),
+                tooltip=[
+                    alt.Tooltip("评分:O", title="评分"),
+                    alt.Tooltip("评论数量:Q", title="评论数量"),
+                ],
+            )
+            .properties(height=320, title="评分分布")
+            .configure_title(
+                anchor="start",
+                color="#111217",
+                fontSize=17,
+                fontWeight=700,
+                offset=18,
+            )
+            .configure_axis(
+                gridColor="#eceef1",
+                domain=False,
+                tickColor="#dfe1e5",
+                labelColor="#727782",
+            )
+            .configure_view(strokeWidth=0)
+        )
+        st.markdown(
+            """
+            <style>
+            .st-key-rating_distribution_chart [data-testid="stElementToolbar"] {
+                display: none !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        chart_column, pipeline_column = st.columns([1.1, 0.9], gap="large")
+        with chart_column:
+            with st.container(key="rating_distribution_chart"):
+                st.altair_chart(rating_chart, use_container_width=True)
+        with pipeline_column:
+            render_editorial_pipeline()
+        st.caption("图表和数量由 Python 计算；已关闭缩放、平移和图表工具栏。")
 
-    with cleaning_tab:
+    if selected_page == "清洗过程":
         st.subheader("评论清洗过程")
         st.markdown(
             "清洗由确定性 Python 规则完成，不调用大模型。"
             "每条评论只会在首次命中的规则中计数，因此各步骤数量不会重复。"
         )
-        retention_column, removed_column = st.columns(2)
+        raw_column, valid_column, retention_column, removed_column = st.columns(4)
+        raw_column.metric("原始记录", len(raw_reviews))
+        valid_column.metric("有效评论", len(cleaned_reviews))
         retention_column.metric(
             "数据保留率",
             f"{cleaning_report.retention_rate:.1%}",
@@ -1051,8 +1625,23 @@ def main() -> None:
                 """
             )
 
-    with reviews_tab:
+    if selected_page == "评论数据":
         st.subheader("清洗后的评论")
+        low_rating_count = int((cleaned_reviews["rating"] <= 2).sum())
+        version_count = (
+            cleaned_reviews["version"].dropna().nunique()
+            if "version" in cleaned_reviews.columns
+            else 0
+        )
+        review_column, rating_column, low_column, version_column = st.columns(4)
+        review_column.metric("有效评论", len(cleaned_reviews))
+        rating_column.metric(
+            "平均评分",
+            f"{average_rating:.1f}" if pd.notna(average_rating) else "暂无",
+        )
+        low_column.metric("1–2 星评论", low_rating_count)
+        version_column.metric("涉及版本", version_count)
+        st.caption("表格保留稳定 Review ID，供 Finding、PRD 和测试用例追溯。")
         preferred_columns = [
             column
             for column in [
@@ -1074,7 +1663,7 @@ def main() -> None:
             hide_index=True,
         )
 
-    with topics_tab:
+    if selected_page == "动态主题":
         st.subheader("阶段 2：动态主题发现")
         st.markdown(
             "AI 会先从每条评论提取单一观点，再根据本次数据聚合主题。"
@@ -1087,7 +1676,11 @@ def main() -> None:
             )
 
         if st.button(
-            "开始动态主题分析", type="primary", disabled=demo_mode
+            "开始动态主题分析",
+            type="primary",
+            disabled=demo_mode,
+            on_click=keep_page_selected,
+            args=("动态主题",),
         ):
             st.session_state.pop("topic_result", None)
             st.session_state.pop("topic_fingerprint", None)
@@ -1130,8 +1723,8 @@ def main() -> None:
         elif saved_result:
             st.info("输入数据或分析目标已改变，请重新运行动态主题发现。")
 
-    with findings_tab:
-        st.subheader("阶段 3：Evidence Finding")
+    if selected_page == "Evidence Finding":
+        st.subheader("阶段 3：证据发现")
         st.markdown(
             "模型负责草拟具体问题和冲突观点；Python 负责校验证据、"
             "计算支持评论数和置信度。少于 2 条去重支持评论的候选会进入 Discovery。"
@@ -1154,7 +1747,11 @@ def main() -> None:
                 current_topic_result, current_fingerprint
             )
             if st.button(
-                "生成 Evidence Finding", type="primary", disabled=demo_mode
+                "生成 Evidence Finding",
+                type="primary",
+                disabled=demo_mode,
+                on_click=keep_page_selected,
+                args=("Evidence Finding",),
             ):
                 st.session_state.pop("finding_result", None)
                 st.session_state.pop("finding_fingerprint", None)
@@ -1205,7 +1802,7 @@ def main() -> None:
             elif saved_finding_result:
                 st.info("上游 Topic 已改变，请重新生成 Evidence Finding。")
 
-    with planning_tab:
+    if selected_page == "版本规划与 PRD":
         st.subheader("阶段 4：版本规划与 PRD")
         st.markdown(
             "模型负责草拟版本目标、需求范围和验收标准；Python 负责校验 Finding 覆盖、"
@@ -1246,7 +1843,11 @@ def main() -> None:
                 current_finding_result, current_finding_fingerprint
             )
             if st.button(
-                "生成版本规划与 PRD", type="primary", disabled=demo_mode
+                "生成版本规划与 PRD",
+                type="primary",
+                disabled=demo_mode,
+                on_click=keep_page_selected,
+                args=("版本规划与 PRD",),
             ):
                 st.session_state.pop("planning_result", None)
                 st.session_state.pop("planning_fingerprint", None)
@@ -1295,7 +1896,7 @@ def main() -> None:
             elif saved_planning_result:
                 st.info("上游 Finding 已改变，请重新生成版本规划与 PRD。")
 
-    with tests_tab:
+    if selected_page == "测试用例与追溯":
         st.subheader("阶段 5：测试用例与完整追溯检查")
         st.markdown(
             "模型负责草拟正常、异常和边界测试；Python 负责校验 Requirement、"
@@ -1353,6 +1954,8 @@ def main() -> None:
                 "生成测试用例并检查完整追溯",
                 type="primary",
                 disabled=demo_mode,
+                on_click=keep_page_selected,
+                args=("测试用例与追溯",),
             ):
                 st.session_state.pop("test_result", None)
                 st.session_state.pop("test_fingerprint", None)
@@ -1404,20 +2007,14 @@ def main() -> None:
             elif saved_test_result:
                 st.info("上游 PRD 已改变，请重新生成测试用例。")
 
-    with workflow_tab:
-        st.subheader("当前完成情况")
-        st.success("✅ 1. 读取示例数据或上传文件")
-        st.success("✅ 2. 检查必要字段")
-        st.success(
-            "✅ 3. 过滤无效评分、空评论和重复评论，生成清洗审计报告"
+    if selected_page == "工作流程":
+        st.subheader("从评论到可执行产品方案")
+        st.markdown(
+            "语义理解由模型完成，统计、引用和质量门由 Python 复算。"
+            "任一阶段失败都会停止下游生成，不会用无依据内容补齐结果。"
         )
-        st.success("✅ 4. AI 动态主题发现、OTHER 与引用校验")
-        st.success("✅ 5. Evidence Finding、冲突证据与置信度质量门")
-        st.success("✅ 6. 版本规划、PRD、需求边界与 Finding → Review 追溯")
-        st.success("✅ 7. 正常/异常/边界测试与端到端追溯质量门")
-        st.success("✅ 8. 美国区 App Store 实时采集、审计报告与文件降级")
-        st.success("✅ 9. 真实缓存 Demo、阶段检查点与失败一键恢复")
-        st.info("⏳ 10. 结果导出和新环境最终验收（下一阶段）")
+        render_editorial_workflow()
+        st.info("下一阶段：结果导出与新环境最终验收。")
 
     st.divider()
     st.caption(

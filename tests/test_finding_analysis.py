@@ -7,6 +7,7 @@ from src.finding_analysis import (
     FindingGenerationError,
     FindingAnalysisService,
     IncompleteFindingCoverageError,
+    InvalidFindingEvidenceError,
     apply_finding_quality_gate,
     calculate_confidence,
     calculate_finding_quality,
@@ -149,6 +150,32 @@ class FindingAnalysisTests(unittest.TestCase):
         with self.assertRaisesRegex(FindingGenerationError, "不是 negative"):
             apply_finding_quality_gate(draft, self.topic_result, self.valid_ids())
 
+    def test_quality_gate_reports_invalid_candidate_and_missing_topics_for_repair(
+        self,
+    ) -> None:
+        draft = FindingDraft(
+            candidates=[
+                FindingCandidate(
+                    candidate_id="CAND-008",
+                    title="登录体验不稳定",
+                    description="用户对登录稳定性的反馈存在差异。",
+                    supporting_insight_ids=["INSIGHT-001", "INSIGHT-003"],
+                    severity="high",
+                )
+            ]
+        )
+
+        with self.assertRaises(InvalidFindingEvidenceError) as context:
+            apply_finding_quality_gate(draft, self.topic_result, self.valid_ids())
+
+        error = context.exception
+        self.assertEqual(error.invalid_candidate_ids, ["CAND-008"])
+        self.assertEqual(error.target_topic_ids, ["TOPIC-001", "TOPIC-002"])
+        self.assertEqual(
+            error.target_insight_ids,
+            ["INSIGHT-001", "INSIGHT-002", "INSIGHT-003", "INSIGHT-004"],
+        )
+
     def test_uncovered_topic_is_rejected(self) -> None:
         draft = self.valid_draft()
         draft.candidates = [draft.candidates[0]]
@@ -161,7 +188,7 @@ class FindingAnalysisTests(unittest.TestCase):
             self.reviews, self.topic_result, ["TOPIC-002"], "关注稳定性"
         )
 
-        self.assertIn("只分析 missing_topics", FINDING_REPAIR_SYSTEM_PROMPT)
+        self.assertIn("只处理 repair_topics", FINDING_REPAIR_SYSTEM_PROMPT)
         self.assertIn("TOPIC-002", messages[1]["content"])
         self.assertIn("INSIGHT-004", messages[1]["content"])
         self.assertIn("REV-004", messages[1]["content"])
@@ -191,6 +218,61 @@ class FindingAnalysisTests(unittest.TestCase):
         self.assertEqual(result.discovery_items[0].source_topic_ids, ["TOPIC-002"])
         self.assertTrue(
             any("有限补分析覆盖了 1 个" in item for item in result.limitations)
+        )
+
+    def test_comprehensive_repair_replaces_invalid_candidate_and_fills_topics(
+        self,
+    ) -> None:
+        original = FindingDraft(
+            candidates=[
+                FindingCandidate(
+                    candidate_id="CAND-008",
+                    title="登录体验不稳定",
+                    description="用户对登录稳定性的反馈存在差异。",
+                    supporting_insight_ids=["INSIGHT-001", "INSIGHT-003"],
+                    severity="high",
+                )
+            ]
+        )
+        repair = FindingDraft(
+            candidates=[
+                FindingCandidate(
+                    candidate_id="CAND-REPAIR-001",
+                    title="登录过程发生崩溃",
+                    description="部分用户登录后无法继续使用应用。",
+                    supporting_insight_ids=["INSIGHT-001", "INSIGHT-002"],
+                    conflicting_insight_ids=["INSIGHT-003"],
+                    severity="high",
+                )
+            ],
+            discovery_candidates=[
+                DiscoveryCandidate(
+                    title="搜索完整性待验证",
+                    reason="当前只有一条 mixed 评论。",
+                    insight_ids=["INSIGHT-004"],
+                )
+            ],
+        )
+
+        merged = merge_finding_repair(
+            original,
+            repair,
+            self.topic_result,
+            ["TOPIC-001", "TOPIC-002"],
+            ["INSIGHT-001", "INSIGHT-002", "INSIGHT-003", "INSIGHT-004"],
+            ["CAND-008"],
+        )
+        result = apply_finding_quality_gate(
+            merged, self.topic_result, self.valid_ids()
+        )
+
+        self.assertNotIn(
+            "CAND-008", [candidate.candidate_id for candidate in merged.candidates]
+        )
+        self.assertEqual(result.findings[0].conflicting_review_ids, ["REV-003"])
+        self.assertEqual(result.discovery_items[0].source_topic_ids, ["TOPIC-002"])
+        self.assertTrue(
+            any("替换了 1 个错误候选" in item for item in result.limitations)
         )
 
     def test_repair_rejects_insight_from_already_covered_topic(self) -> None:
@@ -355,6 +437,53 @@ class FindingAnalysisTests(unittest.TestCase):
         repair_call = structured_client.chat.completions.create.call_args_list[1]
         self.assertIn("TOPIC-002", repair_call.kwargs["messages"][1]["content"])
         self.assertNotIn("TOPIC-001", repair_call.kwargs["messages"][1]["content"])
+        self.assertEqual(len(result.findings), 1)
+        self.assertEqual(len(result.discovery_items), 1)
+
+    def test_service_runs_one_comprehensive_repair(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+            base_url="https://api.deepseek.com",
+        )
+        original = FindingDraft(
+            candidates=[
+                FindingCandidate(
+                    candidate_id="CAND-008",
+                    title="登录体验不稳定",
+                    description="用户对登录稳定性的反馈存在差异。",
+                    supporting_insight_ids=["INSIGHT-001", "INSIGHT-003"],
+                    severity="high",
+                )
+            ]
+        )
+        repair = FindingDraft(
+            candidates=[self.valid_draft().candidates[0]],
+            discovery_candidates=[
+                DiscoveryCandidate(
+                    title="搜索完整性待验证",
+                    reason="当前只有一条 mixed 评论。",
+                    insight_ids=["INSIGHT-004"],
+                )
+            ],
+        )
+        structured_client = MagicMock()
+        structured_client.chat.completions.create.side_effect = [original, repair]
+
+        with patch("openai.OpenAI"), patch(
+            "instructor.from_openai", return_value=structured_client
+        ):
+            result = FindingAnalysisService(config).generate(
+                self.reviews, self.topic_result, "关注稳定性"
+            )
+
+        self.assertEqual(structured_client.chat.completions.create.call_count, 2)
+        repair_payload = structured_client.chat.completions.create.call_args_list[
+            1
+        ].kwargs["messages"][1]["content"]
+        self.assertIn("CAND-008", repair_payload)
+        self.assertIn("TOPIC-001", repair_payload)
+        self.assertIn("TOPIC-002", repair_payload)
         self.assertEqual(len(result.findings), 1)
         self.assertEqual(len(result.discovery_items), 1)
 

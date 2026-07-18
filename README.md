@@ -113,6 +113,9 @@ http://localhost:8501
 页面较长时，可以在左侧“页面快捷导航”直接选择动态主题、Evidence Finding、
 版本规划与 PRD、测试用例与追溯等结果页。右下角的“↑ 回到顶部”按钮会始终可见，
 无需手动滚动回页面最上方。
+顶部导航与侧栏快捷导航共享同一个页面状态：点击任意一侧都会立即切换实际内容，并同步另一侧的选中项。
+阶段按钮触发 Streamlit 整页重跑前会同步当前结果页，因此分析期间和完成后不会自动跳回“数据概览”。
+数据概览的评分柱状图采用固定坐标范围，不提供缩放、平移或图表工具栏，避免演示时误触改变视图。
 
 ## 上传文件格式
 
@@ -242,7 +245,7 @@ UI 会同时展示 Atomic Insight 数量和涉及的去重 Review 数量。后�
 ```text
 Review → Atomic Insight → Topic
 → 模型草拟 Finding Candidate / Discovery Candidate
-→ 若唯一问题是遗漏 Topic，只对遗漏 Topic 执行一次有限补分析
+→ 若存在证据角色错误或遗漏 Topic，只对相关证据执行一次综合有限修复
 → Python 从 Insight 推导 Review 与 Topic
 → 校验支持与冲突证据
 → Python 计算支持数量和置信度
@@ -259,7 +262,7 @@ Review → Atomic Insight → Topic
 - 少于 2 条去重支持评论的候选进入 Discovery；
 - 置信度根据支持数、冲突数和 Topic 覆盖计算，不接受模型估算。
 
-如果首轮草稿的唯一错误是遗漏 Topic，Python 只把遗漏 Topic 及其 Insight、来源 Review 交给模型补分析，并要求每个 Topic 进入 Finding Candidate 或 Discovery Candidate。补分析不能引用已覆盖 Topic 的 Insight，最多执行一次；伪造 Insight、情绪证据错误、重复引用或补分析后仍有遗漏都会继续阻断。
+如果首轮草稿存在可安全定位的证据角色错误或遗漏 Topic，Python 会移除错误候选，并且只把错误候选、相关 Topic、允许重新分配的 Insight 和来源 Review 交给模型执行一次综合有限修复。模型可以重新判断 supporting、conflicting 或 Discovery，但不能引用修复范围外的 Insight；已经正确的候选保持不动。修复后 Python 重新运行完整质量门。伪造 Insight、非法 Review、重复引用、越界修复或修复后仍有遗漏都会继续阻断，不会无限重试，也不会进入 PRD。
 
 `MIN_FINDING_SUPPORT = 2` 是当前小样本演示的保守门槛，不代表统计显著性。最终使用大规模美国区评论时应根据样本量重新校准。
 

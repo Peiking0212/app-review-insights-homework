@@ -451,6 +451,49 @@ UTF-8 source read: passed
 - 实际借鉴：阶段状态可见、失败入口靠近错误、缓存结果可审计、先展示可靠结果再尝试实时运行。
 - 明确不借鉴及原因：不引入数据库、登录、任务队列或云存储；Homework 本地演示不需要这些复杂度。
 
+### 2026-07-18 / Finding 综合有限修复
+
+- 完成：Python 同时识别证据角色错误候选和遗漏 Topic；删除错误候选后，只发送相关 Topic、Insight 与 Review 进行一次局部修复；合并时保留其他正确候选；最终重新运行完整 Finding 质量门。
+- 修改文件：`src/finding_analysis.py`、`src/finding_prompts.py`、`tests/test_finding_analysis.py`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：Finding 专项 19 个测试、全部 94 个自动测试通过；Python 编译、依赖完整性与 Git 差异检查通过。
+- 遇到的问题：100 条真实评论的首轮草稿中，`CAND-008` 把 `INSIGHT-0072` 错误作为 supporting，同时遗漏 `TOPIC-009/010/011/014`；旧逻辑只修复纯遗漏，因此按设计停止。
+- AI 建议中的错误或风险：让 Python 按 sentiment 自动移动证据会把标签判断误当成语义冲突；重新生成全部 Finding 又可能破坏已经正确的候选。
+- 我的取舍：模型只重判错误候选及遗漏范围；Python 确定允许使用的 Insight 集合、替换错误候选并执行最终质量门；伪造 Insight、非法 Review 和范围外引用仍直接阻断；最多修复一次。
+- 当前可以演示：证据角色错误与 Topic 遗漏同时出现时，系统自动进行一次综合有限修复，通过后才允许进入 PRD。
+- 关联 commit：待本次 Finding 综合有限修复提交。
+- 下一步：在当前页面重新生成 Evidence Finding，确认100条真实评论触发综合修复后通过 Groundedness Gate。
+
+### 2026-07-18 / Streamlit 双向导航与阶段页保持修复
+
+- 完成：用可控的顶部横向导航替代不可编程切换的 Tabs；顶部与侧栏双向同步并只渲染当前结果页；四个阶段按钮触发整页重跑前会先保持对应阶段。
+- 修改文件：`app.py`、`tests/test_app.py`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：App 专项 4 个测试、全部 96 个自动测试及 Python 编译检查通过。
+- 遇到的问题：Streamlit Tab 的前端选择不会自动写入 Session State，`default` 也不能可靠控制已经存在的 Tabs；所以侧栏变化看似触发重跑，实际内容仍停在旧 Tab。
+- 我的取舍：使用 Streamlit 原生 Radio、按钮回调和 Session State，不注入 JavaScript；用样式保持顶部 Tab 信息层级，并统一覆盖四个模型阶段。
+- 当前可以演示：侧栏和顶部任一导航都能切换实际内容并同步另一侧；点击任一阶段生成按钮后，分析中和完成后保持当前结果页。
+- 关联 commit：待本次页面保持修复提交。
+
+### 2026-07-18 / 评分柱状图关闭缩放
+
+- 完成：数据概览改用固定 Altair 柱状图，未启用缩放或平移 Selection，并在局部容器隐藏图表工具栏；保留静态悬停数据提示。
+- 修改文件：`app.py`、`requirements.txt`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：App 专项 4 个测试、全部 96 个自动测试、Python 编译和依赖检查通过。
+- 遇到的问题：当前 Streamlit 1.50 的 `st.altair_chart` 使用 `use_container_width`，不是新版本的 `width` 参数；首次专项测试发现后已改为兼容写法。
+- 我的取舍：复用 Streamlit 已依赖的 Altair，不额外引入 Plotly；工具栏样式只作用于评分图，避免影响其他组件。
+- 当前可以演示：评分分布固定显示1至5星，不支持缩放、平移、框选或工具栏放大。
+- 关联 commit：待本次静态柱状图提交。
+
+### 2026-07-18 / 黑白编辑风 UI 方向与全页面统一
+
+- 完成：从参考图提炼字体、字号、留白、圆角、细描边和弱阴影规则；生成三套两页面方向稿并选择黑白编辑风；将设计令牌扩展到数据概览、清洗、评论、主题、Finding、PRD、测试和工作流程页面。
+- 修改文件：`app.py`、`design/ui-directions/*`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：App 专项 4 个测试、全部 96 个自动测试和 Python 编译通过。
+- 遇到的问题：字体 CSS 选择器范围过大导致 Streamlit Material 图标显示为 `keyboard_arrow_down`；Finding 的黑色严重度标签看起来像可点击选中态。
+- AI 建议中的错误或风险：视觉稿中的强强调标签适合展示图，但直接套到真实交互页面会产生错误的可点击暗示；全页面重复采集报告也会让页面继续过长。
+- 我的取舍：恢复 Streamlit 图标字体；静态标签全部改为浅灰，黑色只留给主操作；采集报告和基础数据只出现在概览页，复杂结果只默认展开第一项。
+- 当前可以演示：同一套黑白设计语言覆盖完整 Review → Topic → Finding → Requirement → TestCase 页面，长页面可以通过双向导航快速切换。
+- 关联 commit：待本次 UI 统一与稳定性修复提交。
+
 ## 7. 每次收工填写模板
 
 ```markdown

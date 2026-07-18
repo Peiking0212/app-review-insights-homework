@@ -6,3 +6,4 @@ __pycache__/
 .env.*
 !.env.example
 data/runtime/
+data/food_delivery_test.csv
