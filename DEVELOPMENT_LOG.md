@@ -119,13 +119,14 @@ UTF-8 source read: passed
 
 ### 阶段 5：测试用例与追溯检查
 
-- 状态：待开始
+- 状态：已完成
 - 阶段参考：Python Validator。
 - 任务：
-  - [ ] 每个 P0/P1 Requirement 生成正常和异常测试用例。
-  - [ ] 校验 TestCase → Requirement → Review。
-  - [ ] 展示追溯矩阵和覆盖率。
+  - [x] 每个 P0/P1 Requirement 生成正常、异常和边界测试用例。
+  - [x] 校验 TestCase → Requirement → Finding → Review。
+  - [x] 展示追溯矩阵、需求覆盖率、必需场景覆盖率和非法引用数。
 - 验收：非法引用为 0；核心需求测试覆盖率为 100%。
+- 已验证：59 个自动测试和语法检查通过；真实 DeepSeek 调用生成 3 条测试，normal/negative/boundary 全覆盖，Review Traceability 100%，Invalid References 0。
 - 建议 commit：`feat: add traceable test cases and quality gate`
 
 ### 阶段 6：美国区 App Store 采集
@@ -169,9 +170,9 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 进入阶段 5 测试用例与追溯检查：从已验证 Requirement 生成正常、异常和边界测试，并完成 Review → Finding → Requirement → TestCase 全链路校验。
+> 进入阶段 6 美国区 App Store 采集：解析任意 App Store 链接，强制读取美国区评论，并保留 CSV/JSON 与缓存降级路径。
 
-每个核心 Requirement 必须有可执行测试用例；TestCase 的 Requirement 和 Review 引用必须由 Python 校验。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
+实时采集必须记录来源、时间和限制；失败时不得伪造评论或覆盖已经完成的导入路径。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
 ## 6. 每日开发记录
 
@@ -340,6 +341,22 @@ UTF-8 source read: passed
 - 查看资料：Instructor + Pydantic 结构校验、项目 Python Validator 原则。
 - 实际借鉴：结构化输出约束、有限重试、输出前自检、确定性证据唯一性和失败阻断。
 - 明确不借鉴及原因：不无限重试、不静默删除重复证据、不让模型自行声称质量门通过；这些会增加成本或降低可审计性。
+
+### 2026-07-18 / 阶段 5 测试用例与完整追溯检查
+
+- 完成：增加 TestCase Candidate Schema、测试 Prompt、确定性测试质量门、覆盖率报告、Streamlit 测试页和 Review → Finding → Requirement → TestCase 追溯矩阵。
+- 修改文件：`app.py`、`src/schemas.py`、`src/test_prompts.py`、`src/test_generation.py`、`tests/test_test_generation.py`、`tests/test_app.py`、README 与 AI/开发记录。
+- 测试命令与结果：新增 9 个阶段 5 测试；全部 59 个自动测试及相关 Python 语法检查通过；真实 DeepSeek 阶段 5 调用通过。
+- 遇到的问题：模型适合草拟可执行步骤，但不应自行复制 Review、优先级或最终测试 ID，否则测试层可能和 PRD 层产生引用漂移。
+- AI 建议中的错误或风险：只要求“每条需求有测试”可能让一个正常场景掩盖 P0/P1 的异常与边界缺口；把 out_of_scope 当成功能需求会扩大 PRD 范围。
+- 我的取舍：P0/P1 强制 normal、negative、boundary 三类独立场景；P2/P3 至少 normal；Python 从 Requirement 派生 `TC-*`、Review 和优先级，并复算四项质量指标。
+- 当前可以演示：测试详情、Requirement Coverage、Required Scenario Coverage、Review Traceability、Invalid References 和完整追溯矩阵。
+- 尚未完成：美国区真实评论采集、缓存 Demo、导出和新环境最终验收。
+- 关联 commit：本次阶段 5 测试与追溯提交。
+- 下一步：阶段 6 美国区 App Store 评论采集与失败降级。
+- 查看资料：项目 Python Validator 原则与现有 Pydantic/Instructor 结构化输出方式。
+- 实际借鉴：模型草拟语义内容、代码派生引用、关键场景覆盖检查、可解释质量指标和失败阻断。
+- 明确不借鉴及原因：不增加独立 Test Agent 编排、不让模型自报覆盖率、不生成无 Requirement 来源的探索性测试；这些会增加复杂度或削弱追溯性。
 
 ## 7. 每次收工填写模板
 

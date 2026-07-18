@@ -393,3 +393,36 @@ class TestCase(StrictModel):
     @classmethod
     def validate_review_ids(cls, values: list[str]) -> list[str]:
         return _validate_id_list(values, "REV-")
+
+
+class TestCaseCandidate(StrictModel):
+    """模型草拟的测试场景；证据、优先级和最终 ID 由 Python 补全。"""
+
+    candidate_id: str = Field(pattern=r"^TCC-[A-Za-z0-9_-]+$")
+    title: str = Field(min_length=1)
+    requirement_id: str = Field(pattern=r"^REQ-[A-Za-z0-9_-]+$")
+    scenario_type: Literal["normal", "negative", "boundary"]
+    preconditions: list[str] = Field(default_factory=list)
+    steps: list[str] = Field(min_length=1)
+    expected_results: list[str] = Field(min_length=1)
+
+
+class TestGenerationDraft(StrictModel):
+    """模型生成的测试草稿，进入 UI 前必须通过确定性追溯质量门。"""
+
+    test_cases: list[TestCaseCandidate] = Field(min_length=1, max_length=30)
+    limitations: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def candidate_ids_must_be_unique(self) -> "TestGenerationDraft":
+        candidate_ids = [item.candidate_id for item in self.test_cases]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            raise ValueError("Test Case Candidate ID 不得重复")
+        return self
+
+
+class TestGenerationResult(StrictModel):
+    """可以展示并参与端到端追溯检查的最终测试结果。"""
+
+    test_cases: list[TestCase] = Field(min_length=1)
+    limitations: list[str] = Field(default_factory=list)

@@ -17,6 +17,7 @@ class StreamlitAppTests(unittest.TestCase):
         self.assertEqual(app.metric[1].value, "5")
         self.assertIn("Evidence Finding", [tab.label for tab in app.tabs])
         self.assertIn("版本规划与 PRD", [tab.label for tab in app.tabs])
+        self.assertIn("测试用例与追溯", [tab.label for tab in app.tabs])
 
 
 if __name__ == "__main__":

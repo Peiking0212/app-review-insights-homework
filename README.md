@@ -1,6 +1,6 @@
 # ReviewScope AI
 
-这是 App Review Insights Homework 的阶段 4 可运行版本。
+这是 App Review Insights Homework 的阶段 5 可运行版本，核心分析闭环已经打通。
 
 当前版本已经可以：
 
@@ -15,9 +15,11 @@
 - 生成带支持证据、冲突证据、置信度和数据限制的 Evidence Finding；
 - 把证据不足的问题降级到 Discovery，不让它进入正式产品规划；
 - 生成版本路线图与 PRD，展示需求范围、范围外事项和验收标准；
-- 由 Python 建立 `Finding → Requirement → Review` 追溯并计算需求优先级。
+- 由 Python 建立 `Finding → Requirement → Review` 追溯并计算需求优先级；
+- 生成正常、异常和边界测试用例；
+- 展示 `Review → Finding → Requirement → TestCase` 完整追溯矩阵和质量门。
 
-当前版本尚未生成测试用例。下一阶段会在已验证 Requirement 基础上增加 Test Case，并完成端到端追溯检查。
+下一阶段将增加美国区 App Store 评论采集，并保留 CSV/JSON 与缓存降级路径。
 
 项目采用“参考案例驱动、确定性验证”的迭代方式。每个阶段开始前只查看对应案例，记录借鉴与不借鉴内容，再进行实现和测试。完整路线见 [项目参考与借鉴手册](REFERENCE_PLAYBOOK.md)。
 
@@ -225,6 +227,29 @@ Evidence Finding 页面会显示四个由 Python 复算的质量指标，不额�
 需求数量按证据实际需要生成 1～6 条，不强行凑成固定数量。Discovery 不能进入正式需求；没有当前评论证据的想法只能单独标记为 `Product Hypothesis`，并展示验证计划，不能伪装成版本承诺。
 
 2026-07-18 已使用真实 DeepSeek 结构化调用单独验证阶段 4：一条通过质量门的订阅透明度 Finding 生成 1 个版本和 1 条正式需求。最终 `REQ-001`、`P1`、来源 `FIND-001` 以及 `REV-001/REV-002` 均由 Python 生成或派生。该数据只用于功能验证，不代表真实 App Store 用户结论。
+
+## 测试用例与完整追溯
+
+阶段 5 从已验证 Requirement 生成测试草稿：
+
+```text
+Requirement + Acceptance Criteria
+→ 模型草拟 normal / negative / boundary 场景
+→ Python 校验 Requirement ID 与场景覆盖
+→ Python 派生 TC ID、优先级和 Review ID
+→ Review → Finding → Requirement → TestCase 质量门
+```
+
+每条 Requirement 至少需要正常场景；P0/P1 必须同时覆盖正常、异常和边界场景。模型不能填写最终 `TC-*`、Review ID 或优先级。页面展示四个确定性指标：
+
+| 指标 | 确定性定义 |
+|---|---|
+| Requirement Coverage | 至少拥有一条测试的需求数 ÷ 全部需求数 |
+| Required Scenario Coverage | 已覆盖的必需场景数 ÷ 全部必需场景数 |
+| Review Traceability | 当前数据集中真实存在的测试来源评论数 ÷ 全部被引用评论数 |
+| Invalid References | 断裂的 Requirement、Finding、Review、优先级或证据关系数量 |
+
+只有四项质量条件同时通过，结果才进入 UI。2026-07-18 已使用真实 DeepSeek 调用验证阶段 5：`REQ-001` 生成 `TC-001`～`TC-003`，覆盖 normal、negative、boundary，场景覆盖率与 Review Traceability 均为 100%，Invalid References 为 0。该数据仅验证流程，不代表真实 App Store 用户结论。
 
 ## 入口文件
 

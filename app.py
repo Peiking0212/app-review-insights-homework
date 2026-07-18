@@ -24,7 +24,13 @@ from src.product_planning import ProductPlanningError, ProductPlanningService
 from src.schemas import (
     FindingGenerationResult,
     ProductPlanResult,
+    TestGenerationResult,
     TopicDiscoveryResult,
+)
+from src.test_generation import (
+    TestGenerationError,
+    TestGenerationService,
+    calculate_traceability_quality,
 )
 from src.topic_discovery import (
     TopicDiscoveryError,
@@ -133,6 +139,21 @@ def planning_input_fingerprint(
         {
             "finding_fingerprint": finding_fingerprint,
             "finding_result": finding_result.model_dump(mode="json"),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    return sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def test_input_fingerprint(
+    plan_result: ProductPlanResult, planning_fingerprint: str
+) -> str:
+    """标识测试阶段上游输入，避免 PRD 重跑后显示旧用例。"""
+    serialized = json.dumps(
+        {
+            "planning_fingerprint": planning_fingerprint,
+            "plan_result": plan_result.model_dump(mode="json"),
         },
         ensure_ascii=False,
         sort_keys=True,
@@ -421,6 +442,96 @@ def render_product_plan(
             st.warning(limitation)
 
 
+def render_test_result(
+    result: TestGenerationResult,
+    finding_result: FindingGenerationResult,
+    plan_result: ProductPlanResult,
+    review_records: list[dict],
+) -> None:
+    """展示测试用例、覆盖指标和完整 Review → TestCase 追溯链。"""
+    valid_review_ids = {record["review_id"] for record in review_records}
+    quality = calculate_traceability_quality(
+        result, finding_result, plan_result, valid_review_ids
+    )
+    st.subheader("Test Quality · Traceability Gate")
+    requirement_column, scenario_column, traceability_column, invalid_column = (
+        st.columns(4)
+    )
+    requirement_column.metric(
+        "Requirement Coverage", f"{quality.requirement_coverage:.0f}%"
+    )
+    scenario_column.metric(
+        "Required Scenario Coverage",
+        f"{quality.critical_scenario_coverage:.0f}%",
+    )
+    traceability_column.metric(
+        "Review Traceability", f"{quality.review_traceability:.0f}%"
+    )
+    invalid_column.metric("Invalid References", quality.invalid_references)
+    st.caption(
+        f"覆盖需求 {quality.covered_requirement_count}/{quality.requirement_count}；"
+        f"必需场景 {quality.covered_critical_scenarios}/"
+        f"{quality.required_critical_scenarios}；"
+        f"可追溯评论 {quality.traceable_review_count}/"
+        f"{quality.referenced_review_count}。全部由 Python 复算。"
+    )
+    if quality.quality_gate_passed:
+        st.success("Traceability Quality Gate：通过")
+    else:
+        st.error("Traceability Quality Gate：未通过，结果不得进入最终交付。")
+
+    st.subheader("测试用例")
+    for test_case in result.test_cases:
+        with st.expander(
+            f"{test_case.test_case_id} · {test_case.title}", expanded=True
+        ):
+            requirement_column, type_column, priority_column = st.columns(3)
+            requirement_column.metric("Requirement", test_case.requirement_id)
+            type_column.metric("场景类型", test_case.test_type)
+            priority_column.metric("优先级", test_case.priority)
+            st.caption("来源 Review：" + "、".join(test_case.source_review_ids))
+            st.markdown("**前置条件**")
+            if test_case.preconditions:
+                for item in test_case.preconditions:
+                    st.markdown(f"- {item}")
+            else:
+                st.caption("无额外前置条件。")
+            st.markdown("**执行步骤**")
+            for index, step in enumerate(test_case.steps, start=1):
+                st.markdown(f"{index}. {step}")
+            st.markdown("**预期结果**")
+            for index, expected in enumerate(test_case.expected_results, start=1):
+                st.markdown(f"{index}. {expected}")
+
+    finding_ids_by_requirement = {
+        requirement.requirement_id: requirement.source_finding_ids
+        for requirement in plan_result.requirements
+    }
+    st.subheader("端到端追溯矩阵")
+    rows = [
+        {
+            "Review": "、".join(test_case.source_review_ids),
+            "Finding": "、".join(
+                finding_ids_by_requirement[test_case.requirement_id]
+            ),
+            "Requirement": test_case.requirement_id,
+            "Test Case": test_case.test_case_id,
+            "Scenario": test_case.test_type,
+            "Priority": test_case.priority,
+        }
+        for test_case in result.test_cases
+    ]
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    st.caption(
+        "TestCase 的 Review、优先级和最终 ID 均由 Python 从已验证 Requirement 派生。"
+    )
+
+    if result.limitations:
+        st.subheader("测试限制")
+        for limitation in result.limitations:
+            st.warning(limitation)
+
+
 def main() -> None:
     st.set_page_config(
         page_title="ReviewScope AI",
@@ -486,6 +597,7 @@ def main() -> None:
         topics_tab,
         findings_tab,
         planning_tab,
+        tests_tab,
         workflow_tab,
     ) = st.tabs(
         [
@@ -495,6 +607,7 @@ def main() -> None:
             "动态主题",
             "Evidence Finding",
             "版本规划与 PRD",
+            "测试用例与追溯",
             "工作流程",
         ]
     )
@@ -581,6 +694,8 @@ def main() -> None:
             st.session_state.pop("finding_fingerprint", None)
             st.session_state.pop("planning_result", None)
             st.session_state.pop("planning_fingerprint", None)
+            st.session_state.pop("test_result", None)
+            st.session_state.pop("test_fingerprint", None)
             try:
                 with st.spinner("正在提取 Atomic Insight 并聚合动态主题……"):
                     result = TopicDiscoveryService().discover(
@@ -634,6 +749,8 @@ def main() -> None:
                 st.session_state.pop("finding_fingerprint", None)
                 st.session_state.pop("planning_result", None)
                 st.session_state.pop("planning_fingerprint", None)
+                st.session_state.pop("test_result", None)
+                st.session_state.pop("test_fingerprint", None)
                 try:
                     with st.spinner("正在归纳问题并执行 Evidence 质量门……"):
                         finding_result = FindingAnalysisService().generate(
@@ -712,6 +829,8 @@ def main() -> None:
             if st.button("生成版本规划与 PRD", type="primary"):
                 st.session_state.pop("planning_result", None)
                 st.session_state.pop("planning_fingerprint", None)
+                st.session_state.pop("test_result", None)
+                st.session_state.pop("test_fingerprint", None)
                 try:
                     with st.spinner("正在草拟需求并执行 PRD 证据与覆盖质量门……"):
                         planning_result = ProductPlanningService().generate(
@@ -747,6 +866,98 @@ def main() -> None:
             elif saved_planning_result:
                 st.info("上游 Finding 已改变，请重新生成版本规划与 PRD。")
 
+    with tests_tab:
+        st.subheader("阶段 5：测试用例与完整追溯检查")
+        st.markdown(
+            "模型负责草拟正常、异常和边界测试；Python 负责校验 Requirement、"
+            "派生 Review 与优先级，并检查 Review → Finding → Requirement → TestCase。"
+        )
+        current_topic_result = None
+        saved_topic_result = st.session_state.get("topic_result")
+        if (
+            saved_topic_result
+            and st.session_state.get("topic_fingerprint") == current_fingerprint
+        ):
+            current_topic_result = TopicDiscoveryResult.model_validate(
+                saved_topic_result
+            )
+
+        current_finding_result = None
+        current_finding_fingerprint = None
+        if current_topic_result is not None:
+            current_finding_fingerprint = finding_input_fingerprint(
+                current_topic_result, current_fingerprint
+            )
+            saved_finding_result = st.session_state.get("finding_result")
+            if (
+                saved_finding_result
+                and st.session_state.get("finding_fingerprint")
+                == current_finding_fingerprint
+            ):
+                current_finding_result = FindingGenerationResult.model_validate(
+                    saved_finding_result
+                )
+
+        current_plan_result = None
+        current_planning_fingerprint = None
+        if current_finding_result is not None:
+            current_planning_fingerprint = planning_input_fingerprint(
+                current_finding_result, current_finding_fingerprint
+            )
+            saved_planning_result = st.session_state.get("planning_result")
+            if (
+                saved_planning_result
+                and st.session_state.get("planning_fingerprint")
+                == current_planning_fingerprint
+            ):
+                current_plan_result = ProductPlanResult.model_validate(
+                    saved_planning_result
+                )
+
+        if current_finding_result is None or current_plan_result is None:
+            st.info("请先完成 Evidence Finding 和版本规划与 PRD，测试不会绕过需求生成。")
+        else:
+            current_test_fingerprint = test_input_fingerprint(
+                current_plan_result, current_planning_fingerprint
+            )
+            if st.button("生成测试用例并检查完整追溯", type="primary"):
+                st.session_state.pop("test_result", None)
+                st.session_state.pop("test_fingerprint", None)
+                try:
+                    with st.spinner("正在草拟测试并执行端到端追溯质量门……"):
+                        test_result = TestGenerationService().generate(
+                            prepared_reviews,
+                            current_finding_result,
+                            current_plan_result,
+                            analysis_goal,
+                        )
+                except (ModelConfigError, TestGenerationError) as error:
+                    st.error(str(error))
+                    st.info("测试阶段已停止，不会展示引用断裂或覆盖不足的测试结果。")
+                else:
+                    st.session_state["test_result"] = test_result.model_dump(
+                        mode="json"
+                    )
+                    st.session_state["test_fingerprint"] = (
+                        current_test_fingerprint
+                    )
+                    st.success("测试用例生成完成，端到端追溯质量门通过。")
+
+            saved_test_result = st.session_state.get("test_result")
+            saved_test_fingerprint = st.session_state.get("test_fingerprint")
+            if (
+                saved_test_result
+                and saved_test_fingerprint == current_test_fingerprint
+            ):
+                render_test_result(
+                    TestGenerationResult.model_validate(saved_test_result),
+                    current_finding_result,
+                    current_plan_result,
+                    prepared_records,
+                )
+            elif saved_test_result:
+                st.info("上游 PRD 已改变，请重新生成测试用例。")
+
     with workflow_tab:
         st.subheader("当前完成情况")
         st.success("✅ 1. 读取示例数据或上传文件")
@@ -757,11 +968,12 @@ def main() -> None:
         st.success("✅ 4. AI 动态主题发现、OTHER 与引用校验")
         st.success("✅ 5. Evidence Finding、冲突证据与置信度质量门")
         st.success("✅ 6. 版本规划、PRD、需求边界与 Finding → Review 追溯")
-        st.info("⏳ 7. 生成测试用例并完成端到端追溯矩阵（下一阶段）")
+        st.success("✅ 7. 正常/异常/边界测试与端到端追溯质量门")
+        st.info("⏳ 8. 美国区 App Store 评论采集与失败降级（下一阶段）")
 
     st.divider()
     st.caption(
-        "当前版本已支持动态主题、Evidence Finding、版本规划与 PRD；测试用例将在下一阶段生成。"
+        "当前版本已打通 Review → Topic → Finding → Requirement → TestCase 核心闭环。"
     )
 
 

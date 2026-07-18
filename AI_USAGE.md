@@ -250,6 +250,18 @@ AI 不得直接决定或伪造：
 - 测试结果：50 个自动测试通过；真实链路生成 1 个 Finding、3 个 Discovery，Evidence Coverage 100%、Review Traceability 100%、Unsupported Claims 0，质量门通过。
 - 关联 commit：本次 Finding 重复 Insight 修复提交。
 
+### 2026-07-18 / 阶段 5 测试用例与完整追溯检查
+
+- 使用工具或模型：Codex 辅助实现；DeepSeek V4 Flash 真实结构化调用；Python Validator。
+- 我的目标：从已验证 Requirement 生成可执行测试，同时证明每条测试可以回到真实评论。
+- 提供给 AI 的关键信息：Requirement、验收标准、范围、范围外事项、优先级和来源评论原文。
+- AI 生成或建议了什么：normal、negative、boundary 测试场景，以及前置条件、步骤和预期结果草稿。
+- 我发现的问题：测试内容需要模型理解语义，但 TestCase ID、Review ID、优先级和覆盖率如果也交给模型，会与已验证 PRD 发生漂移。
+- 我如何验证：测试未知 Requirement、P0/P1 场景缺失、P2 最小覆盖、上游证据不一致、篡改 Review、Prompt 约束和完整质量指标；再执行真实模型调用。
+- 我做出的修改或取舍：模型只引用 Requirement；Python 派生最终 TestCase ID、来源 Review 和优先级，并要求 P0/P1 覆盖三类场景。
+- 测试结果：新增 9 个阶段 5 测试；全部 59 个自动测试和语法检查通过；真实调用生成 3 条测试，场景与 Review 追溯覆盖均为 100%，Invalid References 为 0。
+- 关联 commit：本次阶段 5 测试与追溯提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：
