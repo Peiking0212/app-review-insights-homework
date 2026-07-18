@@ -189,6 +189,19 @@ Review → Atomic Insight → Topic
 
 2026-07-18 使用内置演示数据真实运行阶段 3：4 个 Topic 生成 1 个 Evidence Finding 和 3 个 Discovery。`FIND-001` 有 2 条去重支持评论、1 条冲突评论，Python 计算置信度为 `medium`；其余单评论问题均被降级，没有被描述为普遍问题。该结果只验证流程，不是最终产品结论。
 
+### Finding Quality · Groundedness Score
+
+Evidence Finding 页面会显示四个由 Python 复算的质量指标，不额外调用模型：
+
+| 指标 | 确定性定义 |
+|---|---|
+| Evidence Coverage | Finding 与 Discovery 引用的 Topic 去重评论数 ÷ Topic 阶段涉及的去重评论数 |
+| Review Traceability | 当前数据集中真实存在的被引用评论数 ÷ 全部被引用评论数 |
+| Unsupported Claims | 缺少有效支持、引用越界、证据情绪错误或来源 Topic 不成立的 Finding 数量 |
+| Conflict Evidence | 所有 Finding 引用的去重冲突评论数量 |
+
+页面同时显示分子和分母，例如“覆盖 8/9 条 Topic 去重评论”，避免只有百分比却无法解释。当前不把四个维度强行加权成一个不透明总分；质量门要求存在证据覆盖、`Review Traceability = 100%` 且 `Unsupported Claims = 0`。
+
 ## 入口文件
 
 `app.py` 是这个项目的入口。

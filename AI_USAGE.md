@@ -215,6 +215,17 @@ AI 不得直接决定或伪造：
 - 测试结果：37 个自动测试通过；真实运行 4 个 Topic 得到 1 个 Finding 和 3 个 Discovery；主 Finding 有 2 条支持、1 条冲突，置信度由 Python 计算为 medium。
 - 关联 commit：本次 Evidence Finding 提交。
 
+### 2026-07-18 / Finding Groundedness 质量仪表盘
+
+- 使用工具或模型：Codex 辅助设计和实现；运行时不调用大模型。
+- 我的目标：让面试官一眼看到 Finding 的证据覆盖、引用完整性、无依据结论和冲突证据数量。
+- AI 生成或建议了什么：FindingQualityReport、四项确定性指标、质量门状态和 UI 指标说明。
+- 我发现的问题：直接给一个“Groundedness 87 分”缺少可解释的权重，也可能让模型质量看起来比实际更精确。
+- 我如何验证：分别构造完整覆盖、遗漏 Discovery 和非法 Finding，验证覆盖率下降、追溯率下降与 Unsupported Claims 增加。
+- 我做出的修改或取舍：不生成不透明总分；保留四个可复算维度，并在页面展示分子、分母和 Python 计算声明。
+- 测试结果：Finding 专项 11 个测试通过；全部 40 个自动测试、入口语法和依赖检查通过。
+- 关联 commit：本次 Finding Groundedness 质量仪表盘提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：

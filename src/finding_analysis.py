@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from src.config import ModelConfig
 from src.finding_prompts import build_finding_messages
@@ -28,6 +29,28 @@ MIN_FINDING_SUPPORT = 2
 
 class FindingGenerationError(RuntimeError):
     """Finding 无法在证据约束下安全生成。"""
+
+
+@dataclass(frozen=True)
+class FindingQualityReport:
+    """完全由 Python 复算的 Finding 质量指标。"""
+
+    evidence_coverage: float
+    review_traceability: float
+    unsupported_claims: int
+    conflict_evidence: int
+    covered_review_count: int
+    topic_review_count: int
+    traceable_review_count: int
+    referenced_review_count: int
+
+    @property
+    def quality_gate_passed(self) -> bool:
+        return (
+            self.evidence_coverage > 0
+            and self.review_traceability == 100.0
+            and self.unsupported_claims == 0
+        )
 
 
 def calculate_confidence(
@@ -68,6 +91,98 @@ def _evidence_relationships(
             insight.review_id for insight in topic_insights
         }
     return insight_by_id, topic_by_insight, all_reviews
+
+
+def _percent(numerator: int, denominator: int) -> float:
+    if denominator == 0:
+        return 100.0
+    return numerator / denominator * 100
+
+
+def calculate_finding_quality(
+    result: FindingGenerationResult,
+    topic_result: TopicDiscoveryResult,
+    valid_review_ids: set[str],
+) -> FindingQualityReport:
+    """复算覆盖率、追溯率、不受支持结论和冲突证据数量。"""
+    insight_by_id, topic_by_insight, all_reviews = _evidence_relationships(
+        topic_result
+    )
+    valid_topic_ids = set(all_reviews)
+    topic_review_ids = {
+        insight.review_id
+        for insight in topic_result.insights
+        if insight.insight_id in topic_by_insight
+    }
+    finding_review_ids = {
+        review_id
+        for finding in result.findings
+        for review_id in [
+            *finding.supporting_review_ids,
+            *finding.conflicting_review_ids,
+        ]
+    }
+    discovery_review_ids = {
+        review_id
+        for item in result.discovery_items
+        for review_id in item.review_ids
+    }
+    referenced_review_ids = finding_review_ids | discovery_review_ids
+    covered_review_ids = referenced_review_ids & topic_review_ids
+    traceable_review_ids = referenced_review_ids & valid_review_ids
+    conflict_review_ids = {
+        review_id
+        for finding in result.findings
+        for review_id in finding.conflicting_review_ids
+    }
+
+    unsupported_claims = 0
+    for finding in result.findings:
+        source_topic_ids = set(finding.source_topic_ids)
+        source_insights = [
+            insight
+            for insight_id, insight in insight_by_id.items()
+            if topic_by_insight.get(insight_id) in source_topic_ids
+        ]
+        allowed_support_reviews = {
+            insight.review_id
+            for insight in source_insights
+            if insight.sentiment in {"negative", "mixed"}
+        }
+        allowed_conflict_reviews = {
+            insight.review_id
+            for insight in source_insights
+            if insight.sentiment in {"positive", "mixed"}
+        }
+        support_ids = set(finding.supporting_review_ids)
+        conflict_ids = set(finding.conflicting_review_ids)
+        has_invalid_claim = any(
+            [
+                not support_ids,
+                bool(source_topic_ids - valid_topic_ids),
+                bool((support_ids | conflict_ids) - valid_review_ids),
+                bool(support_ids & conflict_ids),
+                bool(support_ids - allowed_support_reviews),
+                bool(conflict_ids - allowed_conflict_reviews),
+            ]
+        )
+        if has_invalid_claim:
+            unsupported_claims += 1
+
+    return FindingQualityReport(
+        evidence_coverage=_percent(
+            len(covered_review_ids), len(topic_review_ids)
+        ),
+        review_traceability=_percent(
+            len(traceable_review_ids), len(referenced_review_ids)
+        ),
+        unsupported_claims=unsupported_claims,
+        conflict_evidence=len(conflict_review_ids),
+        covered_review_count=len(covered_review_ids),
+        topic_review_count=len(topic_review_ids),
+        traceable_review_count=len(traceable_review_ids),
+        referenced_review_count=len(referenced_review_ids),
+    )
 
 
 def apply_finding_quality_gate(

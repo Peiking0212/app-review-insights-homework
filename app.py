@@ -18,6 +18,7 @@ from src.config import ModelConfigError, model_configured
 from src.finding_analysis import (
     FindingAnalysisService,
     FindingGenerationError,
+    calculate_finding_quality,
 )
 from src.schemas import FindingGenerationResult, TopicDiscoveryResult
 from src.topic_discovery import (
@@ -182,10 +183,40 @@ def render_topic_result(
 
 
 def render_finding_result(
-    result: FindingGenerationResult, review_records: list[dict]
+    result: FindingGenerationResult,
+    topic_result: TopicDiscoveryResult,
+    review_records: list[dict],
 ) -> None:
     """展示 Finding、支持证据、冲突证据和 Discovery。"""
     review_by_id = {record["review_id"]: record for record in review_records}
+    quality = calculate_finding_quality(
+        result, topic_result, set(review_by_id)
+    )
+    st.subheader("Finding Quality · Groundedness Score")
+    coverage_column, traceability_column, unsupported_column, conflict_column = (
+        st.columns(4)
+    )
+    coverage_column.metric(
+        "Evidence Coverage", f"{quality.evidence_coverage:.0f}%"
+    )
+    traceability_column.metric(
+        "Review Traceability", f"{quality.review_traceability:.0f}%"
+    )
+    unsupported_column.metric("Unsupported Claims", quality.unsupported_claims)
+    conflict_column.metric("Conflict Evidence", quality.conflict_evidence)
+    st.caption(
+        f"覆盖 {quality.covered_review_count}/{quality.topic_review_count} "
+        "条 Topic 去重评论；"
+        f"可追溯 {quality.traceable_review_count}/"
+        f"{quality.referenced_review_count} 条被引用评论。所有指标由 Python 复算。"
+    )
+    if quality.quality_gate_passed:
+        st.success("Finding Quality Gate：通过")
+    else:
+        st.error(
+            "Finding Quality Gate：未通过，请检查引用完整性和不受支持结论"
+        )
+
     unique_support_ids = {
         review_id
         for finding in result.findings
@@ -498,6 +529,7 @@ def main() -> None:
             ):
                 render_finding_result(
                     FindingGenerationResult.model_validate(saved_finding_result),
+                    current_topic_result,
                     prepared_records,
                 )
             elif saved_finding_result:

@@ -6,6 +6,7 @@ from src.finding_analysis import (
     FindingGenerationError,
     apply_finding_quality_gate,
     calculate_confidence,
+    calculate_finding_quality,
 )
 from src.finding_prompts import FINDING_SYSTEM_PROMPT, build_finding_messages
 from src.schemas import (
@@ -168,6 +169,49 @@ class FindingAnalysisTests(unittest.TestCase):
         self.assertEqual(calculate_confidence(5, 1, 8), "high")
         self.assertEqual(calculate_confidence(2, 0, 4), "medium")
         self.assertEqual(calculate_confidence(2, 2, 4), "low")
+
+    def test_quality_metrics_are_recalculated_from_evidence(self) -> None:
+        result = apply_finding_quality_gate(
+            self.valid_draft(), self.topic_result, self.valid_ids()
+        )
+
+        quality = calculate_finding_quality(
+            result, self.topic_result, self.valid_ids()
+        )
+
+        self.assertEqual(quality.evidence_coverage, 100.0)
+        self.assertEqual(quality.review_traceability, 100.0)
+        self.assertEqual(quality.unsupported_claims, 0)
+        self.assertEqual(quality.conflict_evidence, 1)
+        self.assertEqual(quality.covered_review_count, 4)
+        self.assertTrue(quality.quality_gate_passed)
+
+    def test_quality_coverage_drops_when_discovery_is_omitted(self) -> None:
+        result = apply_finding_quality_gate(
+            self.valid_draft(), self.topic_result, self.valid_ids()
+        ).model_copy(update={"discovery_items": []})
+
+        quality = calculate_finding_quality(
+            result, self.topic_result, self.valid_ids()
+        )
+
+        self.assertEqual(quality.evidence_coverage, 75.0)
+        self.assertEqual(quality.review_traceability, 100.0)
+
+    def test_quality_report_detects_unsupported_claim(self) -> None:
+        result = apply_finding_quality_gate(
+            self.valid_draft(), self.topic_result, self.valid_ids()
+        ).model_copy(deep=True)
+        result.findings[0].source_topic_ids = ["TOPIC-999"]
+        result.findings[0].supporting_review_ids[0] = "REV-999"
+
+        quality = calculate_finding_quality(
+            result, self.topic_result, self.valid_ids()
+        )
+
+        self.assertEqual(quality.unsupported_claims, 1)
+        self.assertLess(quality.review_traceability, 100.0)
+        self.assertFalse(quality.quality_gate_passed)
 
     def test_prompt_forbids_model_generated_counts_and_prd(self) -> None:
         messages = build_finding_messages(

@@ -96,8 +96,9 @@ UTF-8 source read: passed
   - [x] Python 检查 Insight、Review 和 Topic 关系。
   - [x] Python 计算去重支持数量和置信度。
   - [x] 数据不足时降低置信度或放入 Discovery。
+  - [x] 展示 Evidence Coverage、Review Traceability、Unsupported Claims 和 Conflict Evidence。
 - 验收：不存在非法引用；每个 Finding 可展开真实评论。
-- 已验证：37 个自动测试；内置演示数据真实生成 1 个 Finding 和 3 个 Discovery，支持、冲突和引用校验通过。
+- 已验证：40 个自动测试；内置演示数据真实生成 1 个 Finding 和 3 个 Discovery，支持、冲突和引用校验通过；Groundedness 指标使用确定性样例复算通过。
 - 建议 commits：
   - `feat: generate evidence-grounded findings`
   - `fix: reject hallucinated review references`
@@ -289,6 +290,22 @@ UTF-8 source read: passed
 - 查看资料：Apple Review Summarization Pipeline、项目 Python Validator 原则。
 - 实际借鉴：代表性证据、平衡正反观点、Groundedness 和自动化质量检查。
 - 明确不借鉴及原因：不采用模型微调、Embedding、多模型训练或人工评审平台；这些超出当前 P0 和截止时间范围。
+
+### 2026-07-18 / Finding Groundedness 质量仪表盘
+
+- 完成：增加 FindingQualityReport 与四项确定性 Groundedness 指标，并在 Evidence Finding 页展示质量门状态。
+- 修改文件：`src/finding_analysis.py`、`app.py`、`tests/test_finding_analysis.py`、README 与 AI/开发记录。
+- 测试命令与结果：Finding 专项 11 个测试通过；全部 40 个自动测试、入口语法和依赖检查通过。
+- 遇到的问题：单一综合分需要人为设置权重，容易制造并不存在的精确性。
+- AI 建议中的错误或风险：如果只显示百分比而不展示分子、分母，面试官无法判断 100% 来自 2 条还是 200 条评论。
+- 我的取舍：展示四个独立可复算指标、覆盖分子/分母和质量门，不生成不透明综合分。
+- 当前可以演示：Evidence Coverage、Review Traceability、Unsupported Claims、Conflict Evidence 和 Quality Gate 状态。
+- 尚未完成：版本规划与 PRD、测试用例、美国区真实评论采集和缓存 Demo。
+- 关联 commit：本次 Finding Groundedness 质量仪表盘提交。
+- 下一步：阶段 4 版本规划与 PRD。
+- 查看资料：项目 Python Validator 与确定性统计原则。
+- 实际借鉴：代码复算、可解释分子/分母、非法引用计数和失败可见性。
+- 明确不借鉴及原因：不让模型自评质量，不设置未经验证的综合权重；这些会降低可信度。
 
 ## 7. 每次收工填写模板
 
