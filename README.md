@@ -73,7 +73,17 @@ OPENAI_API_KEY=你的模型密钥
 OPENAI_MODEL=你实际可用的模型名称
 ```
 
-使用 OpenAI 官方接口时 `OPENAI_BASE_URL` 可以留空；使用兼容接口时，填写服务商提供的 `/v1` 地址。`.env` 已被 Git 忽略，不能把真实密钥提交到 GitHub。
+使用 OpenAI 官方接口时 `OPENAI_BASE_URL` 可以留空；使用兼容接口时，填写服务商官方文档提供的地址。`.env` 已被 Git 忽略，不能把真实密钥提交到 GitHub。
+
+使用 DeepSeek 官方接口时可以填写：
+
+```text
+OPENAI_API_KEY=你的 DeepSeek API Key
+OPENAI_MODEL=deepseek-v4-flash
+OPENAI_BASE_URL=https://api.deepseek.com
+```
+
+DeepSeek V4 默认开启 thinking，但 Instructor 的结构化输出会发送强制工具选择。项目检测到 DeepSeek 时会仅对结构化分析请求关闭 thinking，避免 `Thinking mode does not support this tool_choice`。这个兼容参数不会发送给 OpenAI 或其他模型服务。
 
 启动网站：
 
@@ -145,7 +155,9 @@ Review → Topic → Finding → Requirement → TestCase
 
 提示词明确禁止预设健身、订阅、广告等行业分类。每条 Insight 必须归入且只归入一个 Topic；无法提供有效产品体验信息的评论进入 `OTHER`。如果 API、网络、结构化输出或引用校验失败，本阶段会停止，不会继续生成没有证据的 Finding 或 PRD。
 
-内置数据只能验证这条流程。由于本地没有保存真实 API Key，本次提交完成了代码、失败路径和客户端兼容性测试，但仍需使用自己的 Key 和至少两组不同评论做一次真实模型验收。
+侧栏的“模型配置：已读取”只代表 `.env` 字段齐全；只有真实模型请求成功后才会显示“模型调用：已验证”。调用失败时，页面会显示脱敏后的底层服务商错误，API Key 和 Bearer Token 会被隐藏。
+
+内置数据只能验证这条流程。2026-07-18 已使用本地 DeepSeek Key 对内置数据完成一次真实调用：5 条有效评论生成 5 个 Atomic Insight 和 4 个动态 Topic，引用校验通过；模型同时标记了样本少和单条证据限制。仍需再使用一组不同领域评论验证 Topic 会随输入合理变化。
 
 ## 入口文件
 

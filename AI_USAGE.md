@@ -179,6 +179,18 @@ AI 不得直接决定或伪造：
 - 测试结果：22 个自动测试通过；入口及新增模块语法检查通过；缺少配置时 UI 清楚报错且不生成下游结果。
 - 关联 commit：本次阶段 2 动态主题发现提交。
 
+### 2026-07-18 / DeepSeek 结构化输出兼容修复
+
+- 使用工具或模型：Codex、DeepSeek V4 Flash、Instructor、Pydantic。
+- 我的目标：修复真实 DeepSeek 调用失败，并让页面显示可诊断但不泄密的底层错误。
+- 提供给 AI 的关键信息：页面只显示 `InstructorRetryException`、DeepSeek 账户仍有余额、本地 `.env` 已配置。
+- AI 生成或建议了什么：先验证认证与模型列表，再用单次最小请求提取异常链；针对 DeepSeek 结构化请求关闭 thinking；增加错误解包与脱敏。
+- 我发现的问题：失败与余额无关。DeepSeek V4 默认 thinking，而 Instructor 强制 `tool_choice`，服务商返回 `Thinking mode does not support this tool_choice`；原 UI 把真实原因包装掉了。
+- 我如何验证：模型列表接口确认 Key 和模型有效；26 个自动测试通过；真实 DeepSeek 调用对 5 条有效评论生成 5 个 Insight 和 4 个 Topic，所有引用校验通过。
+- 我做出的修改或取舍：仅对 DeepSeek 添加 `thinking=disabled`，不影响其他服务商；页面展示最底层错误，但隐藏 API Key 和 Bearer Token；不保存这次示例结果为真实用户缓存。
+- 测试结果：26 个自动测试通过；Python 语法检查通过；一次真实 DeepSeek V4 Flash 分析通过。
+- 关联 commit：本次 DeepSeek 结构化输出兼容修复提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：

@@ -73,7 +73,7 @@ UTF-8 source read: passed
 
 ### 阶段 2：动态主题发现
 
-- 状态：代码完成，待真实模型验收
+- 状态：内置数据真实模型验收通过，待第二领域数据验收
 - 阶段参考：Apple Review Summarization Pipeline、Instructor + Pydantic、所选 LLM 官方文档。
 - 任务：
   - [x] 添加 `.env.example` 和模型客户端。
@@ -82,8 +82,8 @@ UTF-8 source read: passed
   - [x] 支持 OTHER/无法判断。
   - [x] 模型失败时显示错误，不生成下游结果。
 - 验收：更换评论数据后主题发生合理变化，结构校验通过。
-- 已验证：22 个自动测试、Python 3.9 Instructor 客户端创建、未配置 Key 的 UI 失败停止路径。
-- 待验证：使用真实 Key 分别运行两组不同评论，确认主题随数据合理变化。
+- 已验证：26 个自动测试、Python 3.9 Instructor 客户端创建、未配置 Key 的 UI 失败停止路径；使用 DeepSeek V4 Flash 对内置 5 条有效评论真实运行，生成 5 个 Insight 和 4 个 Topic，引用校验通过。
+- 待验证：使用第二组不同领域评论运行，确认主题随数据合理变化。
 - 建议 commit：`feat: add model-driven dynamic topic discovery`
 
 ### 阶段 3：Evidence Finding
@@ -164,7 +164,7 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 完成阶段 2 的真实模型验收：在本地 `.env` 配置自己的 API Key，分别运行内置数据和一份不同领域 CSV，确认 Topic 随数据变化且所有引用通过校验。
+> 完成阶段 2 的第二组数据验收：上传一份不同领域 CSV，使用相同分析目标运行，确认 Topic 随数据变化且所有引用通过校验。
 
 验收前不进入 Finding/PRD。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
@@ -239,6 +239,22 @@ UTF-8 source read: passed
 - 查看资料：Apple Review Summarization Pipeline、Instructor GitHub、Pydantic Schema 和 OpenAI 官方模型/结构化输出说明。
 - 实际借鉴：原子 Insight、无固定 taxonomy、Pydantic 结构化输出、有限重试和错误停止。
 - 明确不借鉴及原因：不采用 Apple 的模型微调、Embedding 去重、多模型训练和复杂云架构；这些超出本阶段 P0、截止时间和本地演示需要。
+
+### 2026-07-18 / DeepSeek 结构化输出兼容修复
+
+- 完成：定位并修复 DeepSeek V4 thinking 与 Instructor 强制 `tool_choice` 的冲突；页面展示脱敏后的底层服务商错误；模型状态区分“配置已读取”和“调用已验证”。
+- 修改文件：`src/topic_discovery.py`、`app.py`、`tests/test_topic_discovery.py`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：主题发现专项 12 个测试通过；全部 26 个自动测试通过；`app.py`、`src/topic_discovery.py` 和 `src/config.py` 语法检查通过；真实 DeepSeek V4 Flash 调用成功。
+- 遇到的问题：页面只显示外层 `InstructorRetryException`；底层错误是 `Thinking mode does not support this tool_choice`。原“模型配置：已就绪”也会让用户误以为 API 已经验证成功。
+- AI 建议中的错误或风险：此前只根据 OpenAI-compatible 接口推断 Instructor 可直接工作，没有先验证 DeepSeek V4 默认 thinking 与强制工具选择的组合兼容性。
+- 我的取舍：仅对 DeepSeek 结构化请求关闭 thinking，不降低其他模型能力；异常沿 cause 链提取，但必须替换 API Key、Bearer Token 并限制长度。
+- 当前可以演示：DeepSeek 真实生成 Topic、成功状态、动态主题及引用；失败时可以看到可诊断且脱敏的服务商原因。
+- 尚未完成：第二组不同领域评论的主题变化验收、Evidence Finding 及后续闭环。
+- 关联 commit：本次 DeepSeek 结构化输出兼容修复提交。
+- 下一步：上传第二领域 CSV，使用相同分析目标运行并对比 Topic。
+- 查看资料：DeepSeek 官方 Thinking Mode 文档、Instructor + Pydantic 当前实现。
+- 实际借鉴：显式控制 provider-specific thinking；保留 Pydantic 结构化输出、有限重试和确定性引用校验。
+- 明确不借鉴及原因：不为 DeepSeek 单独重写整套客户端，不启用复杂 Agent 工具循环；当前任务只需要一次结构化分析调用。
 
 ## 7. 每次收工填写模板
 

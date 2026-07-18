@@ -1,14 +1,17 @@
 import os
 import unittest
 from math import nan
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from src.config import ModelConfig, ModelConfigError
 from src.prompts import TOPIC_SYSTEM_PROMPT, build_topic_messages
 from src.schemas import AtomicInsight, Topic, TopicDiscoveryResult
 from src.topic_discovery import (
     TopicDiscoveryError,
+    TopicDiscoveryService,
+    build_model_request_options,
     prepare_reviews,
+    safe_provider_error,
     validate_topic_references,
 )
 
@@ -117,9 +120,63 @@ class TopicDiscoveryTests(unittest.TestCase):
             )
 
     def test_missing_model_configuration_stops_before_api_call(self) -> None:
-        with patch.dict(os.environ, {}, clear=True):
+        with patch("src.config.load_dotenv"), patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(ModelConfigError):
                 ModelConfig.from_env()
+
+    def test_deepseek_disables_thinking_for_structured_output(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+            base_url="https://api.deepseek.com",
+        )
+
+        self.assertEqual(
+            build_model_request_options(config),
+            {"extra_body": {"thinking": {"type": "disabled"}}},
+        )
+
+    def test_other_providers_do_not_receive_deepseek_options(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="gpt-test",
+            base_url="https://example.com/v1",
+        )
+
+        self.assertEqual(build_model_request_options(config), {})
+
+    def test_service_passes_deepseek_compatibility_options(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+            base_url="https://api.deepseek.com",
+        )
+        structured_client = MagicMock()
+        structured_client.chat.completions.create.return_value = self.valid_result()
+
+        with patch("openai.OpenAI"), patch(
+            "instructor.from_openai", return_value=structured_client
+        ):
+            TopicDiscoveryService(config).discover(self.reviews, "关注稳定性")
+
+        call_options = structured_client.chat.completions.create.call_args.kwargs
+        self.assertEqual(
+            call_options["extra_body"], {"thinking": {"type": "disabled"}}
+        )
+
+    def test_provider_error_is_unwrapped_and_secret_is_redacted(self) -> None:
+        api_key = "sk-secret-value-12345678"
+        root_error = ValueError(
+            "Thinking mode rejected Authorization: Bearer " + api_key
+        )
+        wrapped_error = RuntimeError("InstructorRetryException")
+        wrapped_error.__cause__ = root_error
+
+        message = safe_provider_error(wrapped_error, api_key)
+
+        self.assertIn("Thinking mode rejected", message)
+        self.assertIn("[REDACTED]", message)
+        self.assertNotIn(api_key, message)
 
     def test_instructor_openai_client_can_be_created(self) -> None:
         import instructor

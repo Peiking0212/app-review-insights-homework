@@ -191,7 +191,10 @@ def main() -> None:
     current_fingerprint = analysis_fingerprint(prepared_records, analysis_goal)
 
     if model_configured():
-        st.sidebar.success("模型配置：已就绪")
+        if st.session_state.get("model_call_verified"):
+            st.sidebar.success("模型调用：已验证")
+        else:
+            st.sidebar.info("模型配置：已读取（尚未验证调用）")
     else:
         st.sidebar.warning("模型配置：未完成（参照 .env.example）")
 
@@ -296,9 +299,11 @@ def main() -> None:
                         prepared_reviews, analysis_goal
                     )
             except (ModelConfigError, TopicDiscoveryError) as error:
+                st.session_state["model_call_verified"] = False
                 st.error(str(error))
                 st.info("主题阶段已停止，不会生成 Finding、PRD 或测试用例。")
             else:
+                st.session_state["model_call_verified"] = True
                 st.session_state["topic_result"] = result.model_dump(mode="json")
                 st.session_state["topic_fingerprint"] = current_fingerprint
                 st.success("动态主题发现完成，引用校验通过。")

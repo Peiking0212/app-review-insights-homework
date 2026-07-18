@@ -6,6 +6,7 @@ import re
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import ValidationError
 
@@ -16,6 +17,38 @@ from src.schemas import Review, TopicDiscoveryResult
 
 class TopicDiscoveryError(RuntimeError):
     """主题发现无法安全完成。"""
+
+
+def _uses_deepseek(config: ModelConfig) -> bool:
+    """识别 DeepSeek 官方接口或 DeepSeek 模型名称。"""
+    hostname = urlparse(config.base_url or "").hostname or ""
+    return hostname.endswith("deepseek.com") or config.model.startswith("deepseek-")
+
+
+def build_model_request_options(config: ModelConfig) -> dict[str, Any]:
+    """返回服务商特定参数，避免把兼容参数发送给其他模型服务。"""
+    if _uses_deepseek(config):
+        return {"extra_body": {"thinking": {"type": "disabled"}}}
+    return {}
+
+
+def safe_provider_error(error: Exception, api_key: str = "") -> str:
+    """提取最底层错误并脱敏，供 UI 展示真实且安全的失败原因。"""
+    root_error = error
+    visited: set[int] = set()
+    while root_error.__cause__ is not None and id(root_error) not in visited:
+        visited.add(id(root_error))
+        root_error = root_error.__cause__
+
+    detail = str(root_error).strip() or type(root_error).__name__
+    if api_key:
+        detail = detail.replace(api_key, "[REDACTED]")
+    detail = re.sub(r"Bearer\s+[^\s,}\]]+", "Bearer [REDACTED]", detail, flags=re.I)
+    detail = re.sub(r"\bsk-[A-Za-z0-9_-]{8,}\b", "[REDACTED]", detail)
+    detail = " ".join(detail.split())
+    if len(detail) > 500:
+        detail = detail[:497] + "..."
+    return f"{type(root_error).__name__}: {detail}"
 
 
 def prepare_reviews(records: Iterable[Mapping[str, Any]]) -> list[Review]:
@@ -153,13 +186,15 @@ class TopicDiscoveryService:
                 response_model=TopicDiscoveryResult,
                 messages=build_topic_messages(reviews, analysis_goal),
                 max_retries=1,
+                **build_model_request_options(self.config),
             )
         except TopicDiscoveryError:
             raise
         except Exception as error:
             raise TopicDiscoveryError(
                 "模型调用或结构化输出失败，本阶段已停止。"
-                f"请检查模型配置、网络和模型兼容性。错误类型：{type(error).__name__}"
+                "请检查模型配置、网络和模型兼容性。"
+                f"服务商返回：{safe_provider_error(error, self.config.api_key)}"
             ) from error
 
         validate_topic_references(
