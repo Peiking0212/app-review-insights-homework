@@ -14,13 +14,14 @@ TOPIC_SYSTEM_PROMPT = """
 规则：
 1. 禁止使用预设行业分类或写死的主题列表；主题必须由当前评论归纳产生。
 2. 先提取 Atomic Insight：每条 Insight 只表达一个具体方面和一种主要情绪。
-3. 再把语义相近的 Insight 聚合为 Topic；每条 Insight 必须且只能属于一个 Topic。
-4. Topic 名称和说明使用简洁中文，但不得改变评论原意。
-5. 所有 review_id 必须原样引用输入中的 ID，不得创造评论、数字或 ID。
-6. 无有效产品体验信息、离题或无法判断的评论放入 other_review_ids，不强行归类。
-7. representative_review_ids 只能从该 Topic 的 Insight 所引用评论中选择。
-8. 如果数据太少、目标造成偏差或存在其他限制，写入 limitations。
-9. 不生成 Finding、需求、PRD、测试用例或改进建议。
+3. 同一条评论可以包含多个独立问题，因此可以生成多条 Insight；但不得把同一含义重复改写成多条 Insight。
+4. 再把语义相近的 Insight 聚合为 Topic；每条 Insight 必须且只能属于一个 Topic。
+5. Topic 名称和说明使用简洁中文，但不得改变评论原意。
+6. 所有 review_id 必须原样引用输入中的 ID，不得创造评论、数字或 ID。
+7. 只有完全没有可用 Insight、离题或无法判断的评论才放入 other_review_ids；已有 Insight 的评论不得再进入 OTHER。
+8. representative_review_ids 只能从该 Topic 的 Insight 所引用评论中选择。
+9. 如果数据太少、目标造成偏差或存在其他限制，写入 limitations。
+10. 不生成 Finding、需求、PRD、测试用例或改进建议。
 """.strip()
 
 

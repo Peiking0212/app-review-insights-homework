@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import date
 from typing import Literal, Optional
 
@@ -91,6 +92,20 @@ class TopicDiscoveryResult(StrictModel):
             raise ValueError("Atomic Insight ID 不得重复")
         if len(topic_ids) != len(set(topic_ids)):
             raise ValueError("Topic ID 不得重复")
+        assigned_insight_ids = [
+            insight_id for topic in self.topics for insight_id in topic.insight_ids
+        ]
+        assignment_counts = Counter(assigned_insight_ids)
+        multiply_assigned = sorted(
+            insight_id
+            for insight_id, count in assignment_counts.items()
+            if count > 1
+        )
+        if multiply_assigned:
+            raise ValueError(
+                "Atomic Insight 只能属于一个 Topic："
+                + ", ".join(multiply_assigned)
+            )
         return self
 
 

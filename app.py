@@ -105,9 +105,12 @@ def render_topic_result(
 ) -> None:
     """展示模型输出以及能够下钻查看的原始评论证据。"""
     review_by_id = {record["review_id"]: record for record in review_records}
-    topic_column, insight_column, other_column = st.columns(3)
+    insight_by_id = {insight.insight_id: insight for insight in result.insights}
+    evidence_review_ids = {insight.review_id for insight in result.insights}
+    topic_column, insight_column, review_column, other_column = st.columns(4)
     topic_column.metric("动态主题", len(result.topics))
     insight_column.metric("原子观点", len(result.insights))
+    review_column.metric("涉及评论（去重）", len(evidence_review_ids))
     other_column.metric("OTHER / 无法判断", len(result.other_review_ids))
 
     st.subheader("动态主题")
@@ -116,8 +119,14 @@ def render_topic_result(
     for topic in result.topics:
         with st.expander(f"{topic.topic_id} · {topic.name}", expanded=True):
             st.write(topic.description)
+            topic_review_ids = {
+                insight_by_id[insight_id].review_id
+                for insight_id in topic.insight_ids
+                if insight_id in insight_by_id
+            }
             st.caption(
                 f"包含 {len(topic.insight_ids)} 条原子观点；"
+                f"涉及 {len(topic_review_ids)} 条去重评论；"
                 f"代表评论：{', '.join(topic.representative_review_ids)}"
             )
             for review_id in topic.representative_review_ids:

@@ -153,11 +153,13 @@ Review → Topic → Finding → Requirement → TestCase
 → UI 展示主题、原子观点、代表评论和限制
 ```
 
-提示词明确禁止预设健身、订阅、广告等行业分类。每条 Insight 必须归入且只归入一个 Topic；无法提供有效产品体验信息的评论进入 `OTHER`。如果 API、网络、结构化输出或引用校验失败，本阶段会停止，不会继续生成没有证据的 Finding 或 PRD。
+提示词明确禁止预设健身、订阅、广告等行业分类。一条 Review 可以包含多个独立问题，因此可以生成多条 Atomic Insight；但每条 Insight 只能表达一个具体方面和一种主要情绪，并且只能归入一个 Topic。完全没有可用 Insight 的评论进入 `OTHER`。Pydantic 与最终 Python Validator 会共同拦截跨 Topic 重复归类、非法引用和遗漏评论。如果 API、网络、结构化输出或引用校验失败，本阶段会停止，不会继续生成没有证据的 Finding 或 PRD。
+
+UI 会同时展示 Atomic Insight 数量和涉及的去重 Review 数量。后续统计“支持评论数”时必须按 Review ID 去重，不能把 Insight 数量当作用户评论数量。
 
 侧栏的“模型配置：已读取”只代表 `.env` 字段齐全；只有真实模型请求成功后才会显示“模型调用：已验证”。调用失败时，页面会显示脱敏后的底层服务商错误，API Key 和 Bearer Token 会被隐藏。
 
-内置数据只能验证这条流程。2026-07-18 已使用本地 DeepSeek Key 对内置数据完成一次真实调用：5 条有效评论生成 5 个 Atomic Insight 和 4 个动态 Topic，引用校验通过；模型同时标记了样本少和单条证据限制。仍需再使用一组不同领域评论验证 Topic 会随输入合理变化。
+内置数据只能验证这条流程。2026-07-18 已使用本地 DeepSeek Key 完成两组真实模型调用：健身/订阅示例的 5 条有效评论生成 5 个 Atomic Insight 和 4 个 Topic；外卖领域 `synthetic_test` 的 8 条有效评论生成 10 个 Atomic Insight、覆盖 8 条去重 Review，并形成 5 个 Topic。外卖数据中两条多问题评论各产生两个有原文依据的独立 Insight。两组引用与覆盖校验均通过，证明 Topic 会随输入变化。两组仍是功能测试数据，不能替代最终美国区 App Store 真实评论。
 
 ## 入口文件
 

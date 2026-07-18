@@ -93,6 +93,7 @@ class TopicDiscoveryTests(unittest.TestCase):
         messages = build_topic_messages(self.reviews, "关注稳定性")
 
         self.assertIn("禁止使用预设行业分类", TOPIC_SYSTEM_PROMPT)
+        self.assertIn("同一条评论可以包含多个独立问题", TOPIC_SYSTEM_PROMPT)
         self.assertIn("REV-0001", messages[1]["content"])
         self.assertIn("关注稳定性", messages[1]["content"])
 
@@ -118,6 +119,30 @@ class TopicDiscoveryTests(unittest.TestCase):
             validate_topic_references(
                 result, {review.review_id for review in self.reviews}
             )
+
+    def test_multiple_distinct_insights_from_one_review_are_allowed(self) -> None:
+        result = self.valid_result()
+        result.insights.append(
+            AtomicInsight(
+                insight_id="INSIGHT-003",
+                review_id="REV-0001",
+                statement="登录后无法继续操作",
+                sentiment="negative",
+            )
+        )
+        result.topics.append(
+            Topic(
+                topic_id="TOPIC-002",
+                name="登录可用性",
+                description="用户登录后无法继续使用应用。",
+                insight_ids=["INSIGHT-003"],
+                representative_review_ids=["REV-0001"],
+            )
+        )
+
+        validate_topic_references(
+            result, {review.review_id for review in self.reviews}
+        )
 
     def test_missing_model_configuration_stops_before_api_call(self) -> None:
         with patch("src.config.load_dotenv"), patch.dict(os.environ, {}, clear=True):

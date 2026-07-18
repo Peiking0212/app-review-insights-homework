@@ -4,7 +4,15 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from src.schemas import Finding, Requirement, Review, TestCase, Topic
+from src.schemas import (
+    AtomicInsight,
+    Finding,
+    Requirement,
+    Review,
+    TestCase,
+    Topic,
+    TopicDiscoveryResult,
+)
 
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -127,6 +135,57 @@ class TraceableSchemaTests(unittest.TestCase):
                 description="Uses a finding ID as a review ID.",
                 insight_ids=["INSIGHT-001"],
                 representative_review_ids=["FIND-001"],
+            )
+
+    def test_topic_result_allows_distinct_insights_from_one_review(self) -> None:
+        result = TopicDiscoveryResult(
+            insights=[
+                AtomicInsight(
+                    insight_id="INSIGHT-001",
+                    review_id="REV-001",
+                    statement="订单缺少商品",
+                    sentiment="negative",
+                ),
+                AtomicInsight(
+                    insight_id="INSIGHT-002",
+                    review_id="REV-001",
+                    statement="无法联系客户支持",
+                    sentiment="negative",
+                ),
+            ]
+        )
+
+        self.assertEqual(len(result.insights), 2)
+        self.assertEqual({item.review_id for item in result.insights}, {"REV-001"})
+
+    def test_topic_result_rejects_insight_assigned_to_multiple_topics(self) -> None:
+        insight = AtomicInsight(
+            insight_id="INSIGHT-001",
+            review_id="REV-001",
+            statement="配送延迟",
+            sentiment="negative",
+        )
+        with self.assertRaisesRegex(
+            ValidationError, "Atomic Insight 只能属于一个 Topic.*INSIGHT-001"
+        ):
+            TopicDiscoveryResult(
+                insights=[insight],
+                topics=[
+                    Topic(
+                        topic_id="TOPIC-001",
+                        name="配送时效",
+                        description="订单送达过慢。",
+                        insight_ids=[insight.insight_id],
+                        representative_review_ids=[insight.review_id],
+                    ),
+                    Topic(
+                        topic_id="TOPIC-002",
+                        name="配送体验",
+                        description="配送体验不佳。",
+                        insight_ids=[insight.insight_id],
+                        representative_review_ids=[insight.review_id],
+                    ),
+                ],
             )
 
 

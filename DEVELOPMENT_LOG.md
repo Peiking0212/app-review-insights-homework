@@ -73,7 +73,7 @@ UTF-8 source read: passed
 
 ### 阶段 2：动态主题发现
 
-- 状态：内置数据真实模型验收通过，待第二领域数据验收
+- 状态：已完成（两组测试数据真实模型验收通过）
 - 阶段参考：Apple Review Summarization Pipeline、Instructor + Pydantic、所选 LLM 官方文档。
 - 任务：
   - [x] 添加 `.env.example` 和模型客户端。
@@ -81,9 +81,10 @@ UTF-8 source read: passed
   - [x] 禁止写死健身 App 分类。
   - [x] 支持 OTHER/无法判断。
   - [x] 模型失败时显示错误，不生成下游结果。
+  - [x] 一条 Review 可生成多个独立 Insight，每条 Insight 只属于一个 Topic。
 - 验收：更换评论数据后主题发生合理变化，结构校验通过。
-- 已验证：26 个自动测试、Python 3.9 Instructor 客户端创建、未配置 Key 的 UI 失败停止路径；使用 DeepSeek V4 Flash 对内置 5 条有效评论真实运行，生成 5 个 Insight 和 4 个 Topic，引用校验通过。
-- 待验证：使用第二组不同领域评论运行，确认主题随数据合理变化。
+- 已验证：29 个自动测试、Python 3.9 Instructor 客户端创建、未配置 Key 的 UI 失败停止路径；DeepSeek V4 Flash 对健身/订阅示例生成 5 个 Insight 和 4 个 Topic，对外卖 `synthetic_test` 的 8 条 Review 生成 10 个 Insight 和 5 个不同 Topic；覆盖 8 条去重 Review，无 Insight 跨 Topic 重复。
+- 遗留限制：两组都是功能测试数据；最终用户结论仍必须使用阶段 6 采集的美国区真实评论或透明缓存。
 - 建议 commit：`feat: add model-driven dynamic topic discovery`
 
 ### 阶段 3：Evidence Finding
@@ -164,7 +165,7 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 完成阶段 2 的第二组数据验收：上传一份不同领域 CSV，使用相同分析目标运行，确认 Topic 随数据变化且所有引用通过校验。
+> 进入阶段 3 Evidence Finding：每个 Finding 必须关联支持与冲突 Review ID，数量由 Python 计算，非法引用不得进入下游。
 
 验收前不进入 Finding/PRD。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
@@ -255,6 +256,22 @@ UTF-8 source read: passed
 - 查看资料：DeepSeek 官方 Thinking Mode 文档、Instructor + Pydantic 当前实现。
 - 实际借鉴：显式控制 provider-specific thinking；保留 Pydantic 结构化输出、有限重试和确定性引用校验。
 - 明确不借鉴及原因：不为 DeepSeek 单独重写整套客户端，不启用复杂 Agent 工具循环；当前任务只需要一次结构化分析调用。
+
+### 2026-07-18 / Atomic Insight 基数纠正与跨领域验收
+
+- 完成：纠正 Review 与 Atomic Insight 的基数关系；允许一条 Review 产生多个独立观点；保留 Insight 跨 Topic 唯一性；UI 分开展示观点数和去重评论数；完成第二领域真实模型验收。
+- 修改文件：`app.py`、`src/prompts.py`、`src/schemas.py`、`tests/test_schemas.py`、`tests/test_topic_discovery.py`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：Schema 与 Topic 专项 22 个测试通过；全部 29 个自动测试通过；相关 Python 文件语法检查通过；外卖数据真实 DeepSeek 调用最终通过。
+- 遇到的问题：截图显示 8 条评论生成 9 个 Insight；AI 最初误判为重复计数。用户指出一条评论可以包含多个观点后，确认这可能是正确的 Atomic Insight 拆分。真实重跑还发现同一 Insight 被分入两个 Topic，最终 Validator 正确拦截。
+- AI 建议中的错误或风险：把“Insight 必须原子化”误解为“Review 只能产生一个 Insight”会丢失多问题评论证据；把 Insight 数量当作评论数则会夸大支持样本。
+- 我的取舍：采用 Review 1 → Insight 0..N、Insight 1 → Topic 1；展示 Insight 数量与去重 Review 数量；将跨 Topic 唯一性放入 Pydantic 供 Instructor 有限修正，并保留最终 Validator。
+- 当前可以演示：两组不同领域数据生成明显不同 Topic；8 条外卖 Review 生成 10 个有原文依据的 Insight，覆盖 8 条去重 Review，形成 5 个 Topic且无跨 Topic 重复。
+- 尚未完成：Evidence Finding、PRD、测试用例、美国区真实评论采集和缓存 Demo。
+- 关联 commit：本次 Atomic Insight 基数纠正提交。
+- 下一步：阶段 3 Evidence Finding。
+- 查看资料：Instructor + Pydantic 结构校验、项目 Python Validator 原则。
+- 实际借鉴：Atomic Insight 原子化、多观点评论拆分、模型结构化阶段有限重试、确定性跨 Topic 唯一性和失败阻断。
+- 明确不借鉴及原因：不强制一条 Review 只能一个 Insight，不增加无限重试，不让模型自行计算去重评论数；这些做法会丢失证据、掩盖错误或夸大统计。
 
 ## 7. 每次收工填写模板
 

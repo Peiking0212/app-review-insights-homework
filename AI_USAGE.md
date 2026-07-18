@@ -191,6 +191,18 @@ AI 不得直接决定或伪造：
 - 测试结果：26 个自动测试通过；Python 语法检查通过；一次真实 DeepSeek V4 Flash 分析通过。
 - 关联 commit：本次 DeepSeek 结构化输出兼容修复提交。
 
+### 2026-07-18 / Atomic Insight 基数纠正与跨领域验收
+
+- 使用工具或模型：Codex、DeepSeek V4 Flash、Instructor、Pydantic、Python Validator。
+- 我的目标：澄清 Review 与 Atomic Insight 的正确关系，并完成第二领域动态主题验收。
+- 提供给 AI 的关键信息：外卖测试页面显示 8 条有效评论、9 个 Insight、5 个 Topic，引用 ID 来自当前 CSV。
+- AI 生成或建议了什么：AI 最初错误建议“一条 Review 最多一个 Insight”；用户指出与多观点评论设计矛盾后，改为 Review 1 → Insight 0..N、Insight 1 → Topic 1，并分别展示观点数与去重评论数。
+- 我发现的问题：“每条 Insight 是原子的”不等于“每条 Review 只能产生一个 Insight”。8 条评论生成 9 条或更多 Insight 可能完全合理；真正需要阻止的是同一 Insight 跨 Topic 重复归类和无依据重复改写。
+- 我如何验证：增加同一 Review 允许多个不同 Insight、同一 Insight 禁止跨 Topic 的测试；运行全部 29 个测试；对本地外卖 `synthetic_test` CSV 进行真实 DeepSeek 调用。
+- 我做出的修改或取舍：保留多问题评论的独立观点；Topic 和 Finding 的评论数量必须按 Review ID 去重；跨 Topic 唯一性由 Pydantic 和最终 Validator 共同保证；测试 CSV 不作为真实用户证据。
+- 测试结果：29 个自动测试通过；真实结果为 8 条评论、10 个 Insight、8 条去重证据 Review、0 OTHER、5 个动态 Topic，覆盖完整且无 Insight 跨 Topic 重复。
+- 关联 commit：本次 Atomic Insight 基数纠正提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：
