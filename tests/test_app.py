@@ -18,6 +18,7 @@ class StreamlitAppTests(unittest.TestCase):
         self.assertIn("Evidence Finding", [tab.label for tab in app.tabs])
         self.assertIn("版本规划与 PRD", [tab.label for tab in app.tabs])
         self.assertIn("测试用例与追溯", [tab.label for tab in app.tabs])
+        self.assertIn("美国区 App Store 实时采集", app.radio[0].options)
 
 
 if __name__ == "__main__":

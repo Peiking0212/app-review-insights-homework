@@ -13,6 +13,11 @@ import pandas as pd
 import streamlit as st
 from pydantic import ValidationError
 
+from src.app_store import (
+    AppStoreCollectionError,
+    CollectionReport,
+    collect_us_reviews,
+)
 from src.cleaning import CleaningReport, clean_review_records
 from src.config import ModelConfigError, model_configured
 from src.finding_analysis import (
@@ -79,12 +84,12 @@ def normalize_reviews(
     return dataframe.iloc[0:0].copy(), report
 
 
-def render_sidebar() -> tuple[pd.DataFrame, str]:
+def render_sidebar() -> tuple[pd.DataFrame, str, CollectionReport | None]:
     """渲染输入区域并返回评论数据和用户的分析目标。"""
     st.sidebar.header("开始分析")
     source = st.sidebar.radio(
         "数据来源",
-        ["内置示例数据", "上传 CSV / JSON"],
+        ["内置示例数据", "美国区 App Store 实时采集", "上传 CSV / JSON"],
     )
     goal = st.sidebar.text_area(
         "分析目标",
@@ -99,10 +104,91 @@ def render_sidebar() -> tuple[pd.DataFrame, str]:
         )
         if uploaded_file is None:
             st.sidebar.info("尚未上传文件，暂时显示内置示例数据。")
-            return load_sample_reviews(), goal
-        return load_uploaded_reviews(uploaded_file), goal
+            return load_sample_reviews(), goal, None
+        return load_uploaded_reviews(uploaded_file), goal, None
 
-    return load_sample_reviews(), goal
+    if source == "美国区 App Store 实时采集":
+        app_url = st.sidebar.text_input(
+            "App Store 链接",
+            value=(
+                "https://apps.apple.com/us/app/"
+                "workout-for-women-home-gym/id839285684"
+            ),
+            help="可以粘贴中国区链接，但采集始终强制使用美国区 storefront。",
+        )
+        requested_count = st.sidebar.select_slider(
+            "最多采集评论数",
+            options=[50, 100, 200, 300, 500],
+            value=100,
+        )
+        live_key = analysis_fingerprint(
+            [{"app_url": app_url, "requested_count": requested_count}],
+            "us_app_store_collection",
+        )
+        if st.sidebar.button("采集美国区评论", type="primary"):
+            st.session_state.pop("live_collection_records", None)
+            st.session_state.pop("live_collection_report", None)
+            st.session_state.pop("live_collection_key", None)
+            st.session_state.pop("live_collection_error", None)
+            try:
+                with st.spinner("正在有限分页采集美国区公开评论……"):
+                    result = collect_us_reviews(
+                        app_url,
+                        requested_review_count=requested_count,
+                    )
+            except AppStoreCollectionError as error:
+                st.session_state["live_collection_error"] = str(error)
+            else:
+                st.session_state["live_collection_records"] = result.records
+                st.session_state["live_collection_report"] = (
+                    result.report.__dict__
+                )
+                st.session_state["live_collection_key"] = live_key
+
+        saved_records = st.session_state.get("live_collection_records")
+        saved_report = st.session_state.get("live_collection_report")
+        saved_key = st.session_state.get("live_collection_key")
+        if saved_records and saved_report and saved_key == live_key:
+            report = CollectionReport(**saved_report)
+            st.sidebar.success(
+                f"已采集 {report.collected_review_count} 条美国区评论"
+            )
+            return pd.DataFrame(saved_records), goal, report
+        if st.session_state.get("live_collection_error"):
+            st.sidebar.error(st.session_state["live_collection_error"])
+        st.sidebar.info(
+            "点击采集后再开始分析。若实时接口失败，请切换到 CSV/JSON；系统不会补造评论。"
+        )
+        st.stop()
+
+    return load_sample_reviews(), goal, None
+
+
+def render_collection_report(report: CollectionReport) -> None:
+    """展示实时采集来源、数量、分页状态和限制。"""
+    st.subheader("美国区实时采集报告")
+    app_column, review_column, page_column, storefront_column = st.columns(4)
+    app_column.metric("App", report.app_name)
+    review_column.metric(
+        "采集评论", f"{report.collected_review_count}/{report.requested_review_count}"
+    )
+    page_column.metric(
+        "成功页数", f"{report.pages_succeeded}/{report.pages_attempted}"
+    )
+    storefront_column.metric("Storefront", report.storefront.upper())
+    st.caption(
+        f"App ID：{report.app_id}；采集时间（UTC）：{report.collected_at}；"
+        f"跨页重复移除：{report.duplicates_removed}；"
+        f"格式异常移除：{report.malformed_removed}。"
+    )
+    st.markdown(f"美国区规范链接：[{report.canonical_url}]({report.canonical_url})")
+    if report.empty_pages:
+        st.info("本次公开 Feed 空页：" + "、".join(map(str, report.empty_pages)))
+    for limitation in report.limitations:
+        st.warning(limitation)
+    with st.expander("查看本次实际请求的公开 Feed URL"):
+        for source_url in report.source_urls:
+            st.code(source_url, language=None)
 
 
 def analysis_fingerprint(records: list[dict], goal: str) -> str:
@@ -543,7 +629,7 @@ def main() -> None:
     st.caption("把真实用户评论转化为可执行产品改进方案")
 
     try:
-        raw_reviews, analysis_goal = render_sidebar()
+        raw_reviews, analysis_goal, collection_report = render_sidebar()
     except (ValueError, json.JSONDecodeError, pd.errors.ParserError) as error:
         st.error(f"文件读取失败：{error}")
         st.stop()
@@ -576,6 +662,9 @@ def main() -> None:
             st.sidebar.info("模型配置：已读取（尚未验证调用）")
     else:
         st.sidebar.warning("模型配置：未完成（参照 .env.example）")
+
+    if collection_report is not None:
+        render_collection_report(collection_report)
 
     st.subheader("本次目标")
     st.info(analysis_goal)
@@ -969,11 +1058,12 @@ def main() -> None:
         st.success("✅ 5. Evidence Finding、冲突证据与置信度质量门")
         st.success("✅ 6. 版本规划、PRD、需求边界与 Finding → Review 追溯")
         st.success("✅ 7. 正常/异常/边界测试与端到端追溯质量门")
-        st.info("⏳ 8. 美国区 App Store 评论采集与失败降级（下一阶段）")
+        st.success("✅ 8. 美国区 App Store 实时采集、审计报告与文件降级")
+        st.info("⏳ 9. 真实缓存 Demo、导出和错误恢复（下一阶段）")
 
     st.divider()
     st.caption(
-        "当前版本已打通 Review → Topic → Finding → Requirement → TestCase 核心闭环。"
+        "当前版本已打通美国区真实评论 → Topic → Finding → Requirement → TestCase 核心闭环。"
     )
 
 

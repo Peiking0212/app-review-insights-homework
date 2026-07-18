@@ -1,6 +1,6 @@
 # ReviewScope AI
 
-这是 App Review Insights Homework 的阶段 5 可运行版本，核心分析闭环已经打通。
+这是 App Review Insights Homework 的阶段 6 可运行版本，核心分析闭环和美国区实时数据入口已经打通。
 
 当前版本已经可以：
 
@@ -18,8 +18,10 @@
 - 由 Python 建立 `Finding → Requirement → Review` 追溯并计算需求优先级；
 - 生成正常、异常和边界测试用例；
 - 展示 `Review → Finding → Requirement → TestCase` 完整追溯矩阵和质量门。
+- 输入任意地区 App Store 链接并强制采集美国区公开书面评论；
+- 展示采集时间、来源 URL、分页结果、去重和失败限制。
 
-下一阶段将增加美国区 App Store 评论采集，并保留 CSV/JSON 与缓存降级路径。
+下一阶段将增加离线缓存 Demo、导出和单阶段错误恢复。
 
 项目采用“参考案例驱动、确定性验证”的迭代方式。每个阶段开始前只查看对应案例，记录借鉴与不借鉴内容，再进行实现和测试。完整路线见 [项目参考与借鉴手册](REFERENCE_PLAYBOOK.md)。
 
@@ -118,6 +120,32 @@ content
 其他字段，例如 `title`、`version` 和 `published_at`，可以暂时缺少。
 
 内置示例数据标记为 `illustrative_sample`，只用于验证页面和清洗流程，不能作为最终分析中的真实用户证据。最终演示必须替换为可说明来源的美国区真实评论或透明标记的缓存结果。
+
+## 美国区 App Store 实时采集
+
+侧栏选择“美国区 App Store 实时采集”，可以输入美国区、中国区或其他地区的 `apps.apple.com` 链接。系统只提取数字 App ID，然后使用美国区 Lookup 与公开 Customer Reviews RSS Feed，因此输入中国区链接也不会采集中国区评论。
+
+```text
+任意地区 App Store URL
+→ 提取 App ID
+→ 美国区 Lookup 验证 App
+→ 有限扫描美国区公开评论 Feed（最多 10 页）
+→ 过滤格式异常、跨页去重
+→ 统一标记 storefront=us 和 source=apple_public_rss_us
+→ 清洗与 AI 分析
+```
+
+采集器每次最多请求 500 条评论，页面之间保留短间隔，每页只进行一次有限重试。公开 Feed 可能出现非连续空页，因此不会因为第一页为空就停止；页面会显示尝试页数、成功页数、空页、实际数量、重复数、采集时间和请求 URL。
+
+数据来源与限制：
+
+- Apple 官方 App Store Connect API 支持获取 Customer Reviews，但需要开发者授权，适合读取自己管理的 App，不适合匿名读取 Homework 指定的第三方 App；
+- 本项目实时路径使用 Apple 公开 iTunes RSS/Lookup 端点，不需要 API Key，但它不是稳定性承诺明确的完整历史归档；
+- 最多扫描 10 页，通常最多约 500 条近期书面评论，不代表全部评分或全部历史用户；
+- Feed 可能返回空页、重复、限流、网络错误或格式变化；部分页失败时透明返回部分数据和限制，完全没有可用评论时停止；
+- 实时失败后切换到 CSV/JSON 导入。阶段 7 会增加经过验证的真实缓存，当前不会用内置示例冒充实时结果。
+
+2026-07-18 真实验收使用题目的中国区链接输入，系统仍定位美国区 App ID `839285684`，有限扫描 7 页获得 100 条去重书面评论。所有记录均标记 `storefront=us`，来源均为 `apple_public_rss_us`；前 4 页及第 6 页为空，系统继续扫描并在后续页获得数据。该结果证明采集和失败透明路径可用，但数量会随 Apple 当前 Feed 变化。
 
 ## 评论清洗过程
 
