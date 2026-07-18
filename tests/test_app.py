@@ -19,6 +19,26 @@ class StreamlitAppTests(unittest.TestCase):
         self.assertIn("版本规划与 PRD", [tab.label for tab in app.tabs])
         self.assertIn("测试用例与追溯", [tab.label for tab in app.tabs])
         self.assertIn("美国区 App Store 实时采集", app.radio[0].options)
+        self.assertEqual(
+            app.radio[1].options,
+            [
+                "数据概览",
+                "清洗过程",
+                "评论数据",
+                "动态主题",
+                "Evidence Finding",
+                "版本规划与 PRD",
+                "测试用例与追溯",
+                "工作流程",
+            ],
+        )
+        self.assertTrue(
+            any("回到顶部" in markdown.value for markdown in app.markdown)
+        )
+
+        app.radio[1].set_value("测试用例与追溯").run(timeout=15)
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(app.radio[1].value, "测试用例与追溯")
 
 
 if __name__ == "__main__":

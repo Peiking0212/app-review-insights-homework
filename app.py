@@ -47,6 +47,62 @@ from src.topic_discovery import (
 PROJECT_DIR = Path(__file__).resolve().parent
 SAMPLE_FILE = PROJECT_DIR / "data" / "sample_reviews.json"
 REQUIRED_COLUMNS = {"review_id", "rating", "content"}
+PAGE_SECTIONS = (
+    "数据概览",
+    "清洗过程",
+    "评论数据",
+    "动态主题",
+    "Evidence Finding",
+    "版本规划与 PRD",
+    "测试用例与追溯",
+    "工作流程",
+)
+
+
+def render_back_to_top() -> None:
+    """提供始终可见的一键回到顶部入口。"""
+    st.markdown('<div id="page-top"></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <style>
+        .back-to-top {
+            position: fixed;
+            right: 1.5rem;
+            bottom: 1.5rem;
+            z-index: 999999;
+            padding: 0.55rem 0.85rem;
+            border: 1px solid rgba(128, 128, 128, 0.35);
+            border-radius: 999px;
+            background: var(--background-color, white);
+            color: var(--text-color, inherit) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+            text-decoration: none !important;
+            font-size: 0.9rem;
+        }
+        .back-to-top:hover {
+            border-color: #ff4b4b;
+            color: #ff4b4b !important;
+        }
+        </style>
+        <a class="back-to-top" href="#page-top" target="_self"
+           aria-label="回到页面顶部">↑ 回到顶部</a>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_page_navigation() -> str:
+    """在固定侧边栏中选择要查看的结果区域。"""
+    st.sidebar.divider()
+    st.sidebar.subheader("页面快捷导航")
+    selected_page = st.sidebar.radio(
+        "直接前往",
+        PAGE_SECTIONS,
+        key="page_navigation",
+        label_visibility="collapsed",
+    )
+    st.sidebar.caption("选择后会自动切换到对应结果页，无需上下翻找。")
+    return selected_page
 
 
 def load_sample_reviews() -> pd.DataFrame:
@@ -625,6 +681,7 @@ def main() -> None:
         layout="wide",
     )
 
+    render_back_to_top()
     st.title("🔎 ReviewScope AI")
     st.caption("把真实用户评论转化为可执行产品改进方案")
 
@@ -663,6 +720,8 @@ def main() -> None:
     else:
         st.sidebar.warning("模型配置：未完成（参照 .env.example）")
 
+    selected_page = render_page_navigation()
+
     if collection_report is not None:
         render_collection_report(collection_report)
 
@@ -688,18 +747,7 @@ def main() -> None:
         planning_tab,
         tests_tab,
         workflow_tab,
-    ) = st.tabs(
-        [
-            "数据概览",
-            "清洗过程",
-            "评论数据",
-            "动态主题",
-            "Evidence Finding",
-            "版本规划与 PRD",
-            "测试用例与追溯",
-            "工作流程",
-        ]
-    )
+    ) = st.tabs(PAGE_SECTIONS, default=selected_page)
 
     with overview_tab:
         st.subheader("评分分布")
