@@ -286,8 +286,8 @@ def render_sidebar(
 def render_collection_report(report: CollectionReport) -> None:
     """展示实时采集来源、数量、分页状态和限制。"""
     st.subheader("美国区实时采集报告")
-    app_column, review_column, page_column, storefront_column = st.columns(4)
-    app_column.metric("App", report.app_name)
+    st.markdown(f"**App：{report.app_name}**")
+    review_column, page_column, storefront_column = st.columns(3)
     review_column.metric(
         "采集评论", f"{report.collected_review_count}/{report.requested_review_count}"
     )
