@@ -1,6 +1,9 @@
 [
   {
     "review_id": "REV-001",
+    "source_id": "SAMPLE-001",
+    "storefront": "us",
+    "source": "illustrative_sample",
     "rating": 1,
     "title": "Unexpected renewal",
     "content": "I did not realize the free trial would renew automatically.",
@@ -9,6 +12,9 @@
   },
   {
     "review_id": "REV-002",
+    "source_id": "SAMPLE-002",
+    "storefront": "us",
+    "source": "illustrative_sample",
     "rating": 2,
     "title": "Need a reminder",
     "content": "There should be a clear reminder before the subscription renews.",
@@ -17,6 +23,9 @@
   },
   {
     "review_id": "REV-003",
+    "source_id": "SAMPLE-003",
+    "storefront": "us",
+    "source": "illustrative_sample",
     "rating": 2,
     "title": "Progress disappeared",
     "content": "My workout progress disappeared after the latest update.",
@@ -25,6 +34,9 @@
   },
   {
     "review_id": "REV-004",
+    "source_id": "SAMPLE-004",
+    "storefront": "us",
+    "source": "illustrative_sample",
     "rating": 3,
     "title": "Hard to change exercises",
     "content": "I want an easier way to replace exercises that hurt my knees.",
@@ -33,6 +45,9 @@
   },
   {
     "review_id": "REV-005",
+    "source_id": "SAMPLE-005",
+    "storefront": "us",
+    "source": "illustrative_sample",
     "rating": 5,
     "title": "Easy to follow",
     "content": "The workouts are easy to follow and the subscription was clear to me.",
@@ -41,6 +56,9 @@
   },
   {
     "review_id": "REV-005",
+    "source_id": "SAMPLE-005",
+    "storefront": "us",
+    "source": "illustrative_sample",
     "rating": 5,
     "title": "Duplicate record",
     "content": "The workouts are easy to follow and the subscription was clear to me.",

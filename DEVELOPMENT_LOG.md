@@ -59,12 +59,12 @@ UTF-8 source read: passed
 
 ### 阶段 1：整理结构与数据模型
 
-- 状态：待开始
+- 状态：已完成
 - 任务：
-  - [ ] 将 `app.py` 中的数据逻辑逐步拆到 `src/`，但保持页面可运行。
-  - [ ] 定义 Review、Topic、Finding、Requirement、TestCase 数据模型。
-  - [ ] 增加 `source_id`、`storefront`、`source` 等来源字段。
-  - [ ] 为清洗和字段验证增加单元测试。
+  - [x] 将清洗逻辑拆到 `src/`，保持页面可运行。
+  - [x] 定义 Review、Topic、Finding、Requirement、TestCase 数据模型。
+  - [x] 增加 `source_id`、`storefront`、`source` 等来源字段。
+  - [x] 为清洗和字段验证增加单元测试。
 - 验收：所有对象具备稳定 ID，测试通过，页面功能无回退。
 - 建议 commit：`feat: define traceable analysis schemas`
 
@@ -152,14 +152,15 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 完成阶段 1：先定义可追溯的数据模型和测试，不接 App Store 实时采集，不生成 PRD。
+> 完成阶段 2：实现基于当前评论动态生成 Topic 的第一版，不接 App Store 实时采集，不生成 PRD。
 
 建议交给 AI 的提示：
 
 ```text
 请先阅读 AGENTS.md、AI_USAGE.md 和 DEVELOPMENT_LOG.md。
-完成阶段 1：定义 Review、Topic、Finding、Requirement 和 TestCase 的 Pydantic 数据模型，并为基础校验添加单元测试。
-保持现有 Streamlit 页面可以运行，不接入模型 API，不做 App Store 实时采集。
+完成阶段 2：添加 OpenAI-compatible 模型客户端和动态主题发现。
+主题必须根据当前评论产生，不能写死健身 App 分类；输出使用 Topic Schema，支持 OTHER，模型失败时停止下游流程。
+保持现有 Streamlit 页面可以运行，不做 App Store 实时采集，不生成 Finding 或 PRD。
 完成后运行全部测试，更新 DEVELOPMENT_LOG.md，并在检查 diff 后创建一个 Git commit；不要推送。
 ```
 
@@ -194,6 +195,18 @@ UTF-8 source read: passed
 - 尚未完成：动态主题、Finding、PRD、测试用例追溯与真实评论采集。
 - 关联 commit：本次评论清洗说明提交。
 - 下一步：阶段 1 数据模型与测试。
+
+### 2026-07-18 / 阶段 1 可追溯数据模型
+
+- 完成：定义 Review、Topic、Finding、Requirement、TestCase Pydantic 模型和引用结构。
+- 修改文件：`src/schemas.py`、`tests/test_schemas.py`、`data/sample_reviews.json`、`requirements.txt`、`app.py`、`README.md`。
+- 测试命令与结果：`python -m unittest discover -s tests -v`，14 个测试通过；Python 入口和模块语法检查通过；Streamlit 默认页面无运行异常。
+- 遇到的问题：结构化输出只保证字段格式，不能证明引用 ID 在当前数据中真实存在。
+- 我的取舍：本阶段验证字段、ID 类型和证据必填；跨对象真实存在性留到追溯校验阶段。
+- 当前可以演示：示例评论来源字段；五类对象的稳定结构和失败验证。
+- 尚未完成：动态主题、Finding、PRD、测试用例追溯与真实评论采集。
+- 关联 commit：本次可追溯数据模型提交。
+- 下一步：阶段 2 动态主题发现。
 
 ## 7. 每次收工填写模板
 

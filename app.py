@@ -148,7 +148,7 @@ def main() -> None:
         removed_column.metric("总移除数量", cleaning_report.removed_count)
         st.dataframe(
             pd.DataFrame(cleaning_report.as_table_rows()),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         with st.expander("为什么需要这些规则？"):
@@ -173,12 +173,15 @@ def main() -> None:
                 "content",
                 "version",
                 "published_at",
+                "source_id",
+                "storefront",
+                "source",
             ]
             if column in cleaned_reviews.columns
         ]
         st.dataframe(
             cleaned_reviews[preferred_columns],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
