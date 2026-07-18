@@ -1,6 +1,6 @@
 # ReviewScope AI
 
-这是 App Review Insights Homework 的阶段 7 可运行版本，核心分析闭环、美国区实时数据入口和离线真实 Demo 已经打通。
+这是 App Review Insights Homework 的最终提交版本。项目已经打通美国区评论采集、清洗、动态主题、证据化 Finding、版本规划与 PRD、测试用例及完整追溯，并提供无需 API Key 或网络的真实缓存 Demo。
 
 当前版本已经可以：
 
@@ -24,25 +24,9 @@
 - 每个成功阶段自动保存本地检查点，失败后可以一键恢复同一输入的上次成功结果；
 - 无 API Key、无网络时可加载经过完整质量门的真实美国区缓存 Demo。
 
-下一阶段将增加 PRD Markdown、测试 CSV、完整 JSON 导出，并执行新环境最终验收。
-
 项目采用“参考案例驱动、确定性验证”的迭代方式。每个阶段开始前只查看对应案例，记录借鉴与不借鉴内容，再进行实现和测试。完整路线见 [项目参考与借鉴手册](REFERENCE_PLAYBOOK.md)。
 
-## 立即预览（不需要安装依赖）
-
-如果还没有安装 Streamlit，可以直接双击：
-
-```text
-run-preview.bat
-```
-
-或者运行：
-
-```powershell
-py preview.py
-```
-
-浏览器会打开零依赖预览页。这个预览页用于确认第一阶段的页面和数据流程；正式应用入口仍然是 `app.py`。
+> 仓库不再保留早期零依赖静态预览。它只覆盖第一阶段，容易与当前完整应用混淆；请始终通过 `app.py` 体验最终版本。
 
 ## 运行方法
 
@@ -59,6 +43,12 @@ cd app-review-insights
 py -m venv .venv
 ```
 
+建议先升级新环境自带的 pip，减少旧版依赖解析器带来的安装等待：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+```
+
 激活虚拟环境：
 
 ```powershell
@@ -70,6 +60,8 @@ py -m venv .venv
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
+
+如果依赖下载长时间没有进度，通常是当前网络无法稳定访问 Python 包索引，并不代表项目发生版本冲突。可更换网络后重新执行同一命令；不要把第三方镜像地址写死进项目配置。
 
 复制模型配置模板：
 

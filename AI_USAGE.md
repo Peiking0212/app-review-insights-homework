@@ -344,7 +344,7 @@ AI 不得直接决定或伪造：
 - 我如何验证：测试错误候选诊断、局部 Prompt、替换而非叠加错误候选、补齐遗漏 Topic、拒绝范围外 Insight、纯遗漏兼容路径和服务只执行一次综合修复。
 - 我做出的修改或取舍：Python 不擅自把 positive Insight 移到 conflicting；语义角色由模型在局部证据内重判，Python 负责限制范围和最终全量校验。伪造 ID 或非法 Review 仍不进入修复。
 - 测试结果：Finding 专项 19 个测试、全部 94 个自动测试、语法检查、依赖检查和 Git 差异检查通过。
-- 关联 commit：待本次 Finding 综合有限修复提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
 
 ### 2026-07-18 / 双向页面导航与阶段按钮保持
 
@@ -353,7 +353,7 @@ AI 不得直接决定或伪造：
 - 我发现的问题：`st.tabs(default=...)` 只负责初始选择，不是由 Session State 控制的导航；侧栏变化和浏览器中的 Tab 状态会互相脱节。
 - 我做出的修改或取舍：改用顶部横向原生 Radio 作为可控导航，与侧栏共享同一页面状态并按当前页条件渲染；动态主题、Finding、PRD 和测试按钮也先同步页面。用 CSS 保留 Tab 风格，不使用 JavaScript。
 - 测试结果：AppTest 覆盖侧栏到顶部、顶部到侧栏、阶段按钮重跑保持和真实缓存跨页浏览；全部 96 个自动测试通过。
-- 关联 commit：待本次页面保持修复提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
 
 ### 2026-07-18 / 数据概览静态评分柱状图
 
@@ -361,7 +361,7 @@ AI 不得直接决定或伪造：
 - 我的目标：移除评分柱状图的缩放、平移和图表工具栏，避免演示时误触改变视图。
 - 我做出的修改或取舍：用无交互 Selection 的 Altair 柱状图替代快捷 `st.bar_chart`，保留评分与评论数悬停提示；只隐藏该图表容器的工具栏，不影响其他页面。
 - 我如何验证：App 专项和全部 96 个自动测试、Python 编译、依赖完整性及 Git 差异检查通过。
-- 关联 commit：待本次静态柱状图提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
 
 ### 2026-07-18 / 黑白编辑风 UI 方向探索与全页面落地
 
@@ -373,7 +373,7 @@ AI 不得直接决定或伪造：
 - 我如何验证：根据实际浏览器截图复查标题遮挡、侧栏对比度、Expander 图标和标签语义；运行 AppTest、全部 96 个自动测试和 Python 语法检查。
 - 我做出的修改或取舍：选择最接近参考图的黑白编辑风；黑色只用于真正可点击的主按钮，静态标签统一为浅灰；采集报告和基础指标只在概览页展示，其他页面采用摘要优先、详情折叠。
 - 测试结果：所有页面统一设计语言，导航、缓存恢复和完整分析逻辑回归通过；96 个自动测试全部通过。
-- 关联 commit：待本次 UI 统一与稳定性修复提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
 
 ## 8. 面试时的解释模板
 

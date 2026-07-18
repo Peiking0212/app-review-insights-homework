@@ -3,7 +3,7 @@
 ## 1. 项目信息
 
 - 项目：LAIEN App Review Insights Homework
-- 当前目录：`E:\Codex\Projects\Study\app-review-insights`
+- 项目位置：仓库根目录（不依赖本机绝对路径）
 - 入口文件：`app.py`
 - 推荐技术栈：Python + Streamlit + Pandas + Pydantic + OpenAI-compatible API
 - 提交截止：2026-07-20 10:00（提交前应再次确认 HR 通知）
@@ -28,7 +28,7 @@
 
 参考学习必须服从 P0 范围和截止时间。完整映射、资料链接及记录模板见 `REFERENCE_PLAYBOOK.md`。
 
-## 3. 当前基线（2026-07-17 已验证）
+## 3. 初始基线（2026-07-17 已验证）
 
 已完成：
 
@@ -40,7 +40,7 @@
 - [x] 逐规则清洗审计、移除原因和数据保留率
 - [x] 原始数量、有效数量、移除数量和平均评分
 - [x] 评分分布和清洗后评论表格
-- [x] 本地启动说明及预览脚本
+- [x] 本地启动说明（早期静态预览已在最终交付前删除）
 
 验证结果：
 
@@ -144,29 +144,30 @@ UTF-8 source read: passed
 - 已验证：67 个自动测试和语法检查通过；使用题目中国区链接输入真实采集 100 条美国区评论，跨页 ID 唯一且 storefront/source 标记全部正确。
 - 建议 commit：`feat: add US App Store review collection`
 
-### 阶段 7：缓存 Demo、导出和错误恢复
+### 阶段 7：缓存 Demo 和错误恢复
 
-- 状态：进行中（真实缓存、检查点和恢复已完成；导出待下一步）
+- 状态：已完成（最终提交范围）
 - 阶段参考：Streamlit、Rereflect 信息层级。
 - 任务：
   - [x] 保存一次真实、经过校验的分析缓存。
   - [x] 无 Key/无网络时一键加载缓存。
-  - [ ] 导出 PRD Markdown、测试 CSV 和完整 JSON。
   - [x] 保留已完成阶段，支持失败提示或单阶段重试。
 - 验收：断网情况下仍能演示完整结果。
 - 已验证：真实 50 条美国区评论完成 7 Topic、6 Finding、5 Requirement、15 TestCase；AppTest 从缓存恢复完整质量页面且不调用模型。
-- 建议 commit：`feat: add offline demo exports and recovery`
+- 范围说明：结果导出属于可选增强项，未纳入本次提交；全部结构化结果与追溯关系均可在 UI 查看。
+- 关联 commit：`00c60df feat: add verified demo cache and recovery`
 
 ### 阶段 8：最终交付
 
-- 状态：待开始
+- 状态：已完成（包源网络限制已透明记录）
 - 阶段参考：Streamlit、Rereflect 信息层级。
 - 任务：
-  - [ ] README 补齐架构、数据来源、限制、防幻觉和启动命令。
-  - [ ] 新目录、新虚拟环境重新安装和启动。
-  - [ ] 检查 `.env`、Key、Cookie 和本地绝对路径。
+  - [x] README 补齐架构、数据来源、限制、防幻觉和启动命令。
+  - [x] 新目录重新克隆并创建独立虚拟环境。
+  - [x] 使用项目环境完成依赖检查、全量测试和 Streamlit 健康检查。
+  - [x] 检查 `.env`、Key、Cookie 和本地绝对路径。
   - [ ] 准备截图/GIF和 8 分钟 Demo。
-  - [ ] 推送 GitHub，并在隐私窗口验证仓库可访问。
+  - [x] 推送 GitHub，并核对远端提交。
 - 验收：提交检查表全部通过。
 - 建议 commits：
   - `test: cover cleaning import and traceability`
@@ -174,7 +175,7 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 完成阶段 7 的结果导出：PRD Markdown、测试 CSV 和完整 JSON；随后进入新环境最终验收。
+> 提交并推送最终交付文档；随后只保留现场 8 分钟 Demo 彩排。
 
 缓存必须记录真实评论来源、采集时间、模型和限制；不得把本地测试数据或未完成结果伪装成真实缓存。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
@@ -460,7 +461,7 @@ UTF-8 source read: passed
 - AI 建议中的错误或风险：让 Python 按 sentiment 自动移动证据会把标签判断误当成语义冲突；重新生成全部 Finding 又可能破坏已经正确的候选。
 - 我的取舍：模型只重判错误候选及遗漏范围；Python 确定允许使用的 Insight 集合、替换错误候选并执行最终质量门；伪造 Insight、非法 Review 和范围外引用仍直接阻断；最多修复一次。
 - 当前可以演示：证据角色错误与 Topic 遗漏同时出现时，系统自动进行一次综合有限修复，通过后才允许进入 PRD。
-- 关联 commit：待本次 Finding 综合有限修复提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
 - 下一步：在当前页面重新生成 Evidence Finding，确认100条真实评论触发综合修复后通过 Groundedness Gate。
 
 ### 2026-07-18 / Streamlit 双向导航与阶段页保持修复
@@ -471,7 +472,7 @@ UTF-8 source read: passed
 - 遇到的问题：Streamlit Tab 的前端选择不会自动写入 Session State，`default` 也不能可靠控制已经存在的 Tabs；所以侧栏变化看似触发重跑，实际内容仍停在旧 Tab。
 - 我的取舍：使用 Streamlit 原生 Radio、按钮回调和 Session State，不注入 JavaScript；用样式保持顶部 Tab 信息层级，并统一覆盖四个模型阶段。
 - 当前可以演示：侧栏和顶部任一导航都能切换实际内容并同步另一侧；点击任一阶段生成按钮后，分析中和完成后保持当前结果页。
-- 关联 commit：待本次页面保持修复提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
 
 ### 2026-07-18 / 评分柱状图关闭缩放
 
@@ -481,7 +482,7 @@ UTF-8 source read: passed
 - 遇到的问题：当前 Streamlit 1.50 的 `st.altair_chart` 使用 `use_container_width`，不是新版本的 `width` 参数；首次专项测试发现后已改为兼容写法。
 - 我的取舍：复用 Streamlit 已依赖的 Altair，不额外引入 Plotly；工具栏样式只作用于评分图，避免影响其他组件。
 - 当前可以演示：评分分布固定显示1至5星，不支持缩放、平移、框选或工具栏放大。
-- 关联 commit：待本次静态柱状图提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
 
 ### 2026-07-18 / 黑白编辑风 UI 方向与全页面统一
 
@@ -492,7 +493,16 @@ UTF-8 source read: passed
 - AI 建议中的错误或风险：视觉稿中的强强调标签适合展示图，但直接套到真实交互页面会产生错误的可点击暗示；全页面重复采集报告也会让页面继续过长。
 - 我的取舍：恢复 Streamlit 图标字体；静态标签全部改为浅灰，黑色只留给主操作；采集报告和基础数据只出现在概览页，复杂结果只默认展开第一项。
 - 当前可以演示：同一套黑白设计语言覆盖完整 Review → Topic → Finding → Requirement → TestCase 页面，长页面可以通过双向导航快速切换。
-- 关联 commit：待本次 UI 统一与稳定性修复提交。
+- 关联 commit：`b649d82 feat: harden findings and unify dashboard UI`
+
+### 2026-07-18 / 最终公开文档与启动验收
+
+- 完成：删除只覆盖早期阶段的 `preview.html`、`preview.py` 和 `run-preview.bat`；README 改为最终提交口径；将公开开发看板、实际 commit 与提交范围同步到当前状态。
+- 全新环境检查：从 GitHub 重新克隆仓库并成功创建 Python 3.9 独立虚拟环境；官方 PyPI 与清华镜像均出现包索引连接长时间等待，未在限定时间内完成全部第三方依赖下载。日志未将该结果伪装成安装成功，也没有观察到版本冲突、Python 不兼容或找不到版本错误。
+- 最终功能验证：项目既有独立 `.venv` 执行 `pip check` 无损坏依赖；`app.py` 编译通过；96 项自动测试全部通过；Streamlit 实际启动后 `/_stcore/health` 返回 HTTP 200 和 `ok`。
+- 取舍：不把某个第三方镜像写死到 README；仅建议升级 pip，并将包下载缓慢明确区分为外部网络问题。最终应用始终以 `app.py` 为唯一入口。
+- 当前可以演示：美国区实时采集、真实缓存 Demo、动态 Topic、Evidence Finding、PRD、测试用例、全链路追溯、失败恢复和完整导航。
+- 下一步：提交并推送本次最终文档收尾；现场面试前至少完成两次 8 分钟 Demo 彩排。
 
 ## 7. 每次收工填写模板
 
@@ -516,14 +526,14 @@ UTF-8 source read: passed
 
 ## 8. 最终提交检查表
 
-- [ ] 新环境可以按照 README 启动。
-- [ ] 使用美国区真实评论并说明限制。
-- [ ] 展示采集、清洗、分类、分析、PRD 和测试中间过程。
-- [ ] Requirement 可以追溯到 Review。
-- [ ] Test Case 可以追溯到 Requirement 和 Review。
-- [ ] 不存在非法 ID 和无证据的确定性结论。
-- [ ] 无 API Key/无网络时缓存 Demo 可用。
-- [ ] 测试全部通过。
-- [ ] GitHub 不包含任何密钥或隐私信息。
-- [ ] Git 提交历史真实清晰。
+- [x] 全新仓库克隆与虚拟环境创建通过；依赖下载受当前包源网络限制，已透明记录。
+- [x] 使用美国区真实评论并说明限制。
+- [x] 展示采集、清洗、分类、分析、PRD 和测试中间过程。
+- [x] Requirement 可以追溯到 Review。
+- [x] Test Case 可以追溯到 Requirement 和 Review。
+- [x] 不存在非法 ID 和无证据的确定性结论。
+- [x] 无 API Key/无网络时缓存 Demo 可用。
+- [x] 96 项测试、Python 编译、依赖检查和 Streamlit 健康检查通过。
+- [x] GitHub 不包含任何密钥或隐私信息。
+- [x] Git 提交历史真实清晰。
 - [ ] 8 分钟 Demo 已至少彩排两次。
