@@ -275,6 +275,107 @@ class Requirement(StrictModel):
         return _validate_id_list(values, "REV-")
 
 
+class RequirementCandidate(StrictModel):
+    """模型草拟的需求；证据评论、版本和优先级由 Python 补全。"""
+
+    candidate_id: str = Field(pattern=r"^REQC-[A-Za-z0-9_-]+$")
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    source_finding_ids: list[str] = Field(min_length=1)
+    in_scope: list[str] = Field(min_length=1)
+    out_of_scope: list[str] = Field(default_factory=list)
+    acceptance_criteria: list[str] = Field(min_length=1)
+
+    @field_validator("source_finding_ids")
+    @classmethod
+    def validate_finding_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "FIND-")
+
+
+class ReleaseCandidate(StrictModel):
+    """模型草拟的版本目标以及候选需求分组。"""
+
+    release: str = Field(min_length=1)
+    objective: str = Field(min_length=1)
+    requirement_candidate_ids: list[str] = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+    risks: list[str] = Field(default_factory=list)
+
+    @field_validator("requirement_candidate_ids")
+    @classmethod
+    def validate_candidate_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "REQC-")
+
+
+class DeferredFinding(StrictModel):
+    """本轮不进入版本规划、但给出明确验证动作的 Finding。"""
+
+    finding_id: str = Field(pattern=r"^FIND-[A-Za-z0-9_-]+$")
+    reason: str = Field(min_length=1)
+    next_validation: str = Field(min_length=1)
+
+
+class ProductHypothesis(StrictModel):
+    """没有评论证据支持的产品假设，不得伪装成正式需求。"""
+
+    hypothesis_id: str = Field(pattern=r"^HYP-[A-Za-z0-9_-]+$")
+    title: str = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+    validation_plan: str = Field(min_length=1)
+
+
+class ProductPlanningDraft(StrictModel):
+    """模型输出的版本规划与 PRD 草稿，必须再经过 Python 质量门。"""
+
+    prd_title: str = Field(min_length=1)
+    executive_summary: str = Field(min_length=1)
+    requirements: list[RequirementCandidate] = Field(min_length=1, max_length=6)
+    releases: list[ReleaseCandidate] = Field(min_length=1, max_length=3)
+    deferred_findings: list[DeferredFinding] = Field(default_factory=list)
+    product_hypotheses: list[ProductHypothesis] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def draft_ids_must_be_unique(self) -> "ProductPlanningDraft":
+        groups = {
+            "Requirement Candidate": [item.candidate_id for item in self.requirements],
+            "Release": [item.release for item in self.releases],
+            "Deferred Finding": [item.finding_id for item in self.deferred_findings],
+            "Product Hypothesis": [item.hypothesis_id for item in self.product_hypotheses],
+        }
+        for label, values in groups.items():
+            if len(values) != len(set(values)):
+                raise ValueError(f"{label} ID/名称不得重复")
+        return self
+
+
+class ReleasePlanItem(StrictModel):
+    """通过质量门后的版本计划。"""
+
+    release: str = Field(min_length=1)
+    objective: str = Field(min_length=1)
+    requirement_ids: list[str] = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+    risks: list[str] = Field(default_factory=list)
+
+    @field_validator("requirement_ids")
+    @classmethod
+    def validate_requirement_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "REQ-")
+
+
+class ProductPlanResult(StrictModel):
+    """可展示、可追溯，并能进入测试用例阶段的最终规划结果。"""
+
+    prd_title: str = Field(min_length=1)
+    executive_summary: str = Field(min_length=1)
+    releases: list[ReleasePlanItem] = Field(min_length=1)
+    requirements: list[Requirement] = Field(min_length=1)
+    deferred_findings: list[DeferredFinding] = Field(default_factory=list)
+    product_hypotheses: list[ProductHypothesis] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+
 class TestCase(StrictModel):
     """验证需求是否解决来源评论问题的测试用例。"""
 

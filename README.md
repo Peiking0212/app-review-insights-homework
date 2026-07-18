@@ -1,6 +1,6 @@
 # ReviewScope AI
 
-这是 App Review Insights Homework 的阶段 3 可运行版本。
+这是 App Review Insights Homework 的阶段 4 可运行版本。
 
 当前版本已经可以：
 
@@ -13,9 +13,11 @@
 - 使用 AI 提取 Atomic Insight，并根据当前评论动态聚合 Topic；
 - 支持 OTHER / 无法判断，使用 Python 拦截不存在、重复或遗漏的引用；
 - 生成带支持证据、冲突证据、置信度和数据限制的 Evidence Finding；
-- 把证据不足的问题降级到 Discovery，不让它进入后续产品规划。
+- 把证据不足的问题降级到 Discovery，不让它进入正式产品规划；
+- 生成版本路线图与 PRD，展示需求范围、范围外事项和验收标准；
+- 由 Python 建立 `Finding → Requirement → Review` 追溯并计算需求优先级。
 
-当前版本不会生成 PRD。后续会在已经通过质量门的 Finding 基础上增加版本规划、产品需求、测试用例和完整追溯检查。
+当前版本尚未生成测试用例。下一阶段会在已验证 Requirement 基础上增加 Test Case，并完成端到端追溯检查。
 
 项目采用“参考案例驱动、确定性验证”的迭代方式。每个阶段开始前只查看对应案例，记录借鉴与不借鉴内容，再进行实现和测试。完整路线见 [项目参考与借鉴手册](REFERENCE_PLAYBOOK.md)。
 
@@ -201,6 +203,25 @@ Evidence Finding 页面会显示四个由 Python 复算的质量指标，不额�
 | Conflict Evidence | 所有 Finding 引用的去重冲突评论数量 |
 
 页面同时显示分子和分母，例如“覆盖 8/9 条 Topic 去重评论”，避免只有百分比却无法解释。当前不把四个维度强行加权成一个不透明总分；质量门要求存在证据覆盖、`Review Traceability = 100%` 且 `Unsupported Claims = 0`。
+
+## 版本规划与 PRD
+
+阶段 4 只接收通过 Groundedness 质量门的 Evidence Finding：
+
+```text
+已验证 Finding
+→ 模型草拟 Requirement Candidate、版本目标与验收标准
+→ Python 校验 Finding 是否全部处理
+→ Python 从 Finding 派生真实 Review ID
+→ Python 根据严重度和置信度计算 P0-P3
+→ 最终 Release Plan + Requirement + 追溯矩阵
+```
+
+模型不能自行填写最终 `REQ-*`、Review ID 或 P0-P3。Python 会确保每条候选需求恰好进入一个版本，每个 Finding 要么被需求覆盖、要么明确暂缓，不能遗漏或同时出现在两处。正式需求包含 `in_scope`、`out_of_scope` 和可观察的验收标准。
+
+需求数量按证据实际需要生成 1～6 条，不强行凑成固定数量。Discovery 不能进入正式需求；没有当前评论证据的想法只能单独标记为 `Product Hypothesis`，并展示验证计划，不能伪装成版本承诺。
+
+2026-07-18 已使用真实 DeepSeek 结构化调用单独验证阶段 4：一条通过质量门的订阅透明度 Finding 生成 1 个版本和 1 条正式需求。最终 `REQ-001`、`P1`、来源 `FIND-001` 以及 `REV-001/REV-002` 均由 Python 生成或派生。该数据只用于功能验证，不代表真实 App Store 用户结论。
 
 ## 入口文件
 

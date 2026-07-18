@@ -105,14 +105,15 @@ UTF-8 source read: passed
 
 ### 阶段 4：版本规划与 PRD
 
-- 状态：待开始
+- 状态：已完成
 - 阶段参考：Apple Pipeline 的代表性证据与平衡原则、Python Validator。
 - 任务：
-  - [ ] 按证据、严重度、目标相关性和范围规划版本。
-  - [ ] 生成 3–6 条核心 Requirement。
-  - [ ] 每条包含来源、范围、不包含范围和验收标准。
-  - [ ] 无证据建议标记为 Product Hypothesis。
+  - [x] 按证据、严重度、置信度和范围规划版本。
+  - [x] 按证据实际需要生成 1–6 条核心 Requirement，不强行凑数。
+  - [x] 每条包含来源、范围、不包含范围和验收标准。
+  - [x] 无证据建议标记为 Product Hypothesis。
 - 验收：所有 Requirement 能追溯到 Finding 和 Review。
+- 已验证：49 个自动测试及相关语法检查通过；真实 DeepSeek 阶段 4 调用生成 1 个版本、1 条需求，Python 派生 `REQ-001`、`P1`、`FIND-001` 和两条来源 Review。
 - 建议 commit：`feat: generate evidence-based release plan and PRD`
 
 ### 阶段 5：测试用例与追溯检查
@@ -167,9 +168,9 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 进入阶段 4 版本规划与 PRD：只允许通过 Evidence 质量门的 Finding 进入需求，Discovery 不得伪装成确定性需求。
+> 进入阶段 5 测试用例与追溯检查：从已验证 Requirement 生成正常、异常和边界测试，并完成 Review → Finding → Requirement → TestCase 全链路校验。
 
-每条 Requirement 必须关联 Finding 和 Review，并包含范围、不包含范围与可测试验收标准。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
+每个核心 Requirement 必须有可执行测试用例；TestCase 的 Requirement 和 Review 引用必须由 Python 校验。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
 ## 6. 每日开发记录
 
@@ -306,6 +307,22 @@ UTF-8 source read: passed
 - 查看资料：项目 Python Validator 与确定性统计原则。
 - 实际借鉴：代码复算、可解释分子/分母、非法引用计数和失败可见性。
 - 明确不借鉴及原因：不让模型自评质量，不设置未经验证的综合权重；这些会降低可信度。
+
+### 2026-07-18 / 阶段 4 版本规划与 PRD
+
+- 完成：增加规划草稿 Schema、证据约束 Prompt、PRD 确定性质量门、版本路线图、需求详情、暂缓项、产品假设和 Finding → Requirement → Review 追溯矩阵。
+- 修改文件：`app.py`、`src/schemas.py`、`src/planning_prompts.py`、`src/product_planning.py`、`tests/test_product_planning.py`、`tests/test_app.py`、README 与 AI/开发记录。
+- 测试命令与结果：新增 9 个阶段 4 测试；全部 49 个自动测试及相关 Python 语法检查通过；真实 DeepSeek 阶段 4 调用通过。
+- 遇到的问题：第一次端到端真实重跑时，上游 Finding 模型把相同 Insight 同时放入 Finding 和 Discovery，现有质量门正确阻断，因此改用一组通过同样质量门的固定 Finding 单独验证阶段 4。
+- AI 建议中的错误或风险：固定要求 3～6 条需求会在小样本只有一个可靠 Finding 时诱导模型凑数；让模型填写 Review ID 和 P0-P3 会造成引用或统计幻觉。
+- 我的取舍：需求数量改为证据驱动的 1～6 条；模型只引用 Finding，Python 派生 Review、最终 REQ ID、版本映射和优先级；全为低置信度时优先级保守降一级。
+- 当前可以演示：版本目标、需求范围与范围外事项、验收标准、Finding 处理率、追溯矩阵、暂缓 Finding 和非承诺 Product Hypothesis。
+- 尚未完成：测试用例、端到端追溯、美国区真实评论采集和缓存 Demo。
+- 关联 commit：本次阶段 4 提交。
+- 下一步：阶段 5 测试用例与完整追溯检查。
+- 查看资料：Apple Review Summarization Pipeline 的代表性证据与平衡原则、项目 Python Validator 原则。
+- 实际借鉴：证据驱动规划、明确范围边界、可测试验收标准、代码派生关系和失败停止。
+- 明确不借鉴及原因：不采用固定需求数量、模型自评优先级、复杂 Agent 编排和无证据路线图；这些会制造填充内容或降低可解释性。
 
 ## 7. 每次收工填写模板
 

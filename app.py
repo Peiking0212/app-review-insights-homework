@@ -20,7 +20,12 @@ from src.finding_analysis import (
     FindingGenerationError,
     calculate_finding_quality,
 )
-from src.schemas import FindingGenerationResult, TopicDiscoveryResult
+from src.product_planning import ProductPlanningError, ProductPlanningService
+from src.schemas import (
+    FindingGenerationResult,
+    ProductPlanResult,
+    TopicDiscoveryResult,
+)
 from src.topic_discovery import (
     TopicDiscoveryError,
     TopicDiscoveryService,
@@ -113,6 +118,21 @@ def finding_input_fingerprint(
         {
             "review_fingerprint": review_fingerprint,
             "topic_result": topic_result.model_dump(mode="json"),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    return sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def planning_input_fingerprint(
+    finding_result: FindingGenerationResult, finding_fingerprint: str
+) -> str:
+    """标识 PRD 的上游输入，避免 Finding 重跑后显示旧规划。"""
+    serialized = json.dumps(
+        {
+            "finding_fingerprint": finding_fingerprint,
+            "finding_result": finding_result.model_dump(mode="json"),
         },
         ensure_ascii=False,
         sort_keys=True,
@@ -293,6 +313,114 @@ def render_finding_result(
             st.warning(limitation)
 
 
+def render_product_plan(
+    result: ProductPlanResult,
+    finding_result: FindingGenerationResult,
+) -> None:
+    """展示版本路线图、PRD、证据追溯和非承诺产品假设。"""
+    covered_finding_ids = {
+        finding_id
+        for requirement in result.requirements
+        for finding_id in requirement.source_finding_ids
+    }
+    handled_finding_ids = covered_finding_ids | {
+        item.finding_id for item in result.deferred_findings
+    }
+    coverage = (
+        len(handled_finding_ids) / len(finding_result.findings) * 100
+        if finding_result.findings
+        else 0
+    )
+    requirement_column, release_column, coverage_column, hypothesis_column = (
+        st.columns(4)
+    )
+    requirement_column.metric("正式需求", len(result.requirements))
+    release_column.metric("规划版本", len(result.releases))
+    coverage_column.metric("Finding 处理率", f"{coverage:.0f}%")
+    hypothesis_column.metric("产品假设", len(result.product_hypotheses))
+
+    st.subheader(result.prd_title)
+    st.write(result.executive_summary)
+
+    st.subheader("版本路线图")
+    for release in result.releases:
+        with st.expander(f"{release.release} · {release.objective}", expanded=True):
+            st.write(release.rationale)
+            st.caption("包含需求：" + "、".join(release.requirement_ids))
+            if release.risks:
+                st.markdown("**风险**")
+                for risk in release.risks:
+                    st.markdown(f"- {risk}")
+
+    st.subheader("PRD 需求")
+    for requirement in result.requirements:
+        with st.expander(
+            f"{requirement.requirement_id} · {requirement.title}", expanded=True
+        ):
+            release_column, priority_column = st.columns(2)
+            release_column.metric("所属版本", requirement.release)
+            priority_column.metric("Python 计算优先级", requirement.priority)
+            st.write(requirement.description)
+            st.caption(
+                "来源 Finding："
+                + "、".join(requirement.source_finding_ids)
+                + "；来源 Review："
+                + "、".join(requirement.source_review_ids)
+            )
+            scope_column, excluded_column = st.columns(2)
+            with scope_column:
+                st.markdown("**范围内**")
+                for item in requirement.in_scope:
+                    st.markdown(f"- {item}")
+            with excluded_column:
+                st.markdown("**范围外**")
+                if requirement.out_of_scope:
+                    for item in requirement.out_of_scope:
+                        st.markdown(f"- {item}")
+                else:
+                    st.caption("本次未补充额外范围外事项。")
+            st.markdown("**验收标准**")
+            for criterion in requirement.acceptance_criteria:
+                st.markdown(f"- {criterion}")
+
+    st.subheader("证据追溯矩阵")
+    traceability_rows = [
+        {
+            "Finding": finding_id,
+            "Requirement": requirement.requirement_id,
+            "Release": requirement.release,
+            "Priority": requirement.priority,
+            "Source Reviews": "、".join(requirement.source_review_ids),
+        }
+        for requirement in result.requirements
+        for finding_id in requirement.source_finding_ids
+    ]
+    st.dataframe(
+        pd.DataFrame(traceability_rows), width="stretch", hide_index=True
+    )
+    st.caption("Review ID 和优先级均由 Python 从已验证 Finding 派生，不由模型填写。")
+
+    if result.deferred_findings:
+        st.subheader("本轮暂缓的 Finding")
+        for item in result.deferred_findings:
+            st.info(
+                f"{item.finding_id}：{item.reason}\n\n下一步验证：{item.next_validation}"
+            )
+
+    if result.product_hypotheses:
+        st.subheader("Product Hypotheses（不属于承诺需求）")
+        st.warning("以下内容没有被当前评论证据支持，必须先验证，不能直接进入版本承诺。")
+        for item in result.product_hypotheses:
+            with st.expander(f"{item.hypothesis_id} · {item.title}"):
+                st.write(item.rationale)
+                st.caption("验证计划：" + item.validation_plan)
+
+    if result.limitations:
+        st.subheader("规划限制")
+        for limitation in result.limitations:
+            st.warning(limitation)
+
+
 def main() -> None:
     st.set_page_config(
         page_title="ReviewScope AI",
@@ -357,6 +485,7 @@ def main() -> None:
         reviews_tab,
         topics_tab,
         findings_tab,
+        planning_tab,
         workflow_tab,
     ) = st.tabs(
         [
@@ -365,6 +494,7 @@ def main() -> None:
             "评论数据",
             "动态主题",
             "Evidence Finding",
+            "版本规划与 PRD",
             "工作流程",
         ]
     )
@@ -449,6 +579,8 @@ def main() -> None:
             st.session_state.pop("topic_fingerprint", None)
             st.session_state.pop("finding_result", None)
             st.session_state.pop("finding_fingerprint", None)
+            st.session_state.pop("planning_result", None)
+            st.session_state.pop("planning_fingerprint", None)
             try:
                 with st.spinner("正在提取 Atomic Insight 并聚合动态主题……"):
                     result = TopicDiscoveryService().discover(
@@ -500,6 +632,8 @@ def main() -> None:
             if st.button("生成 Evidence Finding", type="primary"):
                 st.session_state.pop("finding_result", None)
                 st.session_state.pop("finding_fingerprint", None)
+                st.session_state.pop("planning_result", None)
+                st.session_state.pop("planning_fingerprint", None)
                 try:
                     with st.spinner("正在归纳问题并执行 Evidence 质量门……"):
                         finding_result = FindingAnalysisService().generate(
@@ -535,6 +669,84 @@ def main() -> None:
             elif saved_finding_result:
                 st.info("上游 Topic 已改变，请重新生成 Evidence Finding。")
 
+    with planning_tab:
+        st.subheader("阶段 4：版本规划与 PRD")
+        st.markdown(
+            "模型负责草拟版本目标、需求范围和验收标准；Python 负责校验 Finding 覆盖、"
+            "派生 Review 证据、计算优先级并生成最终 REQ ID。Discovery 不会进入正式需求。"
+        )
+        saved_topic_result = st.session_state.get("topic_result")
+        saved_topic_fingerprint = st.session_state.get("topic_fingerprint")
+        current_topic_result = None
+        if saved_topic_result and saved_topic_fingerprint == current_fingerprint:
+            current_topic_result = TopicDiscoveryResult.model_validate(
+                saved_topic_result
+            )
+
+        current_finding_result = None
+        current_finding_fingerprint = None
+        saved_finding_result = st.session_state.get("finding_result")
+        saved_finding_fingerprint = st.session_state.get("finding_fingerprint")
+        if current_topic_result is not None:
+            current_finding_fingerprint = finding_input_fingerprint(
+                current_topic_result, current_fingerprint
+            )
+            if (
+                saved_finding_result
+                and saved_finding_fingerprint == current_finding_fingerprint
+            ):
+                current_finding_result = FindingGenerationResult.model_validate(
+                    saved_finding_result
+                )
+
+        if current_topic_result is None or current_finding_result is None:
+            st.info("请先依次完成动态主题和 Evidence Finding，PRD 不会绕过证据阶段生成。")
+        elif not current_finding_result.findings:
+            st.warning(
+                "当前只有 Discovery，没有达到证据门槛的 Finding；系统不会强行生成正式 PRD。"
+            )
+        else:
+            current_planning_fingerprint = planning_input_fingerprint(
+                current_finding_result, current_finding_fingerprint
+            )
+            if st.button("生成版本规划与 PRD", type="primary"):
+                st.session_state.pop("planning_result", None)
+                st.session_state.pop("planning_fingerprint", None)
+                try:
+                    with st.spinner("正在草拟需求并执行 PRD 证据与覆盖质量门……"):
+                        planning_result = ProductPlanningService().generate(
+                            prepared_reviews,
+                            current_topic_result,
+                            current_finding_result,
+                            analysis_goal,
+                        )
+                except (ModelConfigError, ProductPlanningError) as error:
+                    st.error(str(error))
+                    st.info("PRD 阶段已停止，不会生成没有可靠来源的版本承诺。")
+                else:
+                    st.session_state["planning_result"] = (
+                        planning_result.model_dump(mode="json")
+                    )
+                    st.session_state["planning_fingerprint"] = (
+                        current_planning_fingerprint
+                    )
+                    st.success("版本规划与 PRD 生成完成，Finding 覆盖和追溯校验通过。")
+
+            saved_planning_result = st.session_state.get("planning_result")
+            saved_planning_fingerprint = st.session_state.get(
+                "planning_fingerprint"
+            )
+            if (
+                saved_planning_result
+                and saved_planning_fingerprint == current_planning_fingerprint
+            ):
+                render_product_plan(
+                    ProductPlanResult.model_validate(saved_planning_result),
+                    current_finding_result,
+                )
+            elif saved_planning_result:
+                st.info("上游 Finding 已改变，请重新生成版本规划与 PRD。")
+
     with workflow_tab:
         st.subheader("当前完成情况")
         st.success("✅ 1. 读取示例数据或上传文件")
@@ -544,11 +756,12 @@ def main() -> None:
         )
         st.success("✅ 4. AI 动态主题发现、OTHER 与引用校验")
         st.success("✅ 5. Evidence Finding、冲突证据与置信度质量门")
-        st.info("⏳ 6. 生成版本规划、PRD 和测试用例（后续阶段）")
+        st.success("✅ 6. 版本规划、PRD、需求边界与 Finding → Review 追溯")
+        st.info("⏳ 7. 生成测试用例并完成端到端追溯矩阵（下一阶段）")
 
     st.divider()
     st.caption(
-        "当前版本已支持动态主题与 Evidence Finding；PRD 和测试用例仍未生成。"
+        "当前版本已支持动态主题、Evidence Finding、版本规划与 PRD；测试用例将在下一阶段生成。"
     )
 
 
