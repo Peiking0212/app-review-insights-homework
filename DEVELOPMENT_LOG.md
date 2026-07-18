@@ -146,14 +146,15 @@ UTF-8 source read: passed
 
 ### 阶段 7：缓存 Demo、导出和错误恢复
 
-- 状态：待开始
+- 状态：进行中（真实缓存、检查点和恢复已完成；导出待下一步）
 - 阶段参考：Streamlit、Rereflect 信息层级。
 - 任务：
-  - [ ] 保存一次真实、经过校验的分析缓存。
-  - [ ] 无 Key/无网络时一键加载缓存。
+  - [x] 保存一次真实、经过校验的分析缓存。
+  - [x] 无 Key/无网络时一键加载缓存。
   - [ ] 导出 PRD Markdown、测试 CSV 和完整 JSON。
-  - [ ] 保留已完成阶段，支持失败提示或单阶段重试。
+  - [x] 保留已完成阶段，支持失败提示或单阶段重试。
 - 验收：断网情况下仍能演示完整结果。
+- 已验证：真实 50 条美国区评论完成 7 Topic、6 Finding、5 Requirement、15 TestCase；AppTest 从缓存恢复完整质量页面且不调用模型。
 - 建议 commit：`feat: add offline demo exports and recovery`
 
 ### 阶段 8：最终交付
@@ -173,7 +174,7 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 进入阶段 7 缓存 Demo、导出和错误恢复：保存一次真实且通过全链路校验的结果，无 Key/无网络时也能审查，并支持导出 PRD、测试和完整 JSON。
+> 完成阶段 7 的结果导出：PRD Markdown、测试 CSV 和完整 JSON；随后进入新环境最终验收。
 
 缓存必须记录真实评论来源、采集时间、模型和限制；不得把本地测试数据或未完成结果伪装成真实缓存。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
@@ -435,6 +436,20 @@ UTF-8 source read: passed
 - 我的取舍：补分析仍允许输出 Discovery；只引用遗漏 Topic 的 Insight；纯遗漏最多补一次，任何越界引用或二次遗漏继续停止。
 - 当前可以演示：Finding 首轮遗漏少量 Topic 时最小补分析后继续；页面限制中记录补分析覆盖数量。
 - 下一步：使用截图对应的 100 条评论再次生成 Evidence Finding，确认 `TOPIC-009`、`TOPIC-013` 被覆盖并通过 Groundedness Gate。
+
+### 2026-07-18 / 阶段 7 真实缓存与单阶段恢复
+
+- 完成：增加版本化 AnalysisSnapshot、真实 Demo 资格校验、原子写入、阶段成功自动检查点、同输入一键恢复、失败切换 Demo 和独立真实缓存生成脚本。
+- 修改文件：`src/analysis_cache.py`、`scripts/build_demo_snapshot.py`、`app.py`、`tests/test_analysis_cache.py`、`tests/test_app.py`、`.gitignore`、README 与项目记录。
+- 测试命令与结果：真实采集 50 条美国区评论，生成 7 Topic、6 Finding、5 Requirement、15 TestCase；缓存完整性校验通过；Streamlit AppTest 成功恢复 Finding/Test Quality 页面且没有模型调用。
+- 遇到的问题：实时模型存在网络、结构化输出和完整覆盖的不确定性；只保存在 session_state 中，刷新或进程重启后无法恢复。
+- AI 建议中的错误或风险：提交 `data/runtime` 会暴露个人运行状态；允许不完整或示例数据晋升为 Demo 会误导面试官；直接覆盖目标文件可能留下半份 JSON。
+- 我的取舍：运行检查点 Git 忽略；公开 Demo 必须是真实美国区完整闭环；先写临时文件再原子替换；快照只记录模型名称，不保存 Key。
+- 当前可以演示：无网络选择“真实缓存 Demo”直接查看完整链路；实时阶段失败后恢复同输入上次成功结果或切换缓存。
+- 尚未完成：PRD Markdown、测试 CSV、完整 JSON 下载和新环境最终验收。
+- 查看资料：Streamlit 状态管理与错误恢复原则、Rereflect 的结果信息层级。
+- 实际借鉴：阶段状态可见、失败入口靠近错误、缓存结果可审计、先展示可靠结果再尝试实时运行。
+- 明确不借鉴及原因：不引入数据库、登录、任务队列或云存储；Homework 本地演示不需要这些复杂度。
 
 ## 7. 每次收工填写模板
 

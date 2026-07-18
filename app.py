@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from hashlib import sha256
 from pathlib import Path
 
@@ -18,8 +19,16 @@ from src.app_store import (
     CollectionReport,
     collect_us_reviews,
 )
+from src.analysis_cache import (
+    AnalysisCacheError,
+    AnalysisSnapshot,
+    create_snapshot,
+    load_snapshot,
+    promote_complete_demo,
+    save_snapshot,
+)
 from src.cleaning import CleaningReport, clean_review_records
-from src.config import ModelConfigError, model_configured
+from src.config import ModelConfig, ModelConfigError, model_configured
 from src.finding_analysis import (
     FindingAnalysisService,
     FindingGenerationError,
@@ -46,6 +55,8 @@ from src.topic_discovery import (
 
 PROJECT_DIR = Path(__file__).resolve().parent
 SAMPLE_FILE = PROJECT_DIR / "data" / "sample_reviews.json"
+DEMO_SNAPSHOT_FILE = PROJECT_DIR / "data" / "demo_snapshot.json"
+RUNTIME_CHECKPOINT_FILE = PROJECT_DIR / "data" / "runtime" / "last_success.json"
 REQUIRED_COLUMNS = {"review_id", "rating", "content"}
 PAGE_SECTIONS = (
     "数据概览",
@@ -140,17 +151,61 @@ def normalize_reviews(
     return dataframe.iloc[0:0].copy(), report
 
 
-def render_sidebar() -> tuple[pd.DataFrame, str, CollectionReport | None]:
+def activate_demo_source() -> None:
+    """按钮回调：在下一次 rerun 前切换到真实缓存 Demo。"""
+    st.session_state["data_source"] = "真实缓存 Demo"
+
+
+def render_sidebar(
+) -> tuple[
+    pd.DataFrame,
+    str,
+    CollectionReport | None,
+    AnalysisSnapshot | None,
+]:
     """渲染输入区域并返回评论数据和用户的分析目标。"""
     st.sidebar.header("开始分析")
     source = st.sidebar.radio(
         "数据来源",
-        ["内置示例数据", "美国区 App Store 实时采集", "上传 CSV / JSON"],
+        [
+            "内置示例数据",
+            "真实缓存 Demo",
+            "美国区 App Store 实时采集",
+            "上传 CSV / JSON",
+        ],
+        key="data_source",
     )
+
+    if source == "真实缓存 Demo":
+        try:
+            snapshot = load_snapshot(DEMO_SNAPSHOT_FILE)
+        except AnalysisCacheError as error:
+            st.sidebar.error(str(error))
+            st.sidebar.info("请先完成一次真实美国区完整分析并保存为 Demo。")
+            st.stop()
+        if not snapshot.is_complete_demo:
+            st.sidebar.error("缓存不是完整、可审计的美国区真实 Demo。")
+            st.stop()
+        report = CollectionReport(**snapshot.collection_report)
+        st.sidebar.success(
+            f"真实缓存：{report.app_name} · {len(snapshot.raw_reviews)} 条"
+        )
+        st.sidebar.caption(
+            f"采集：{report.collected_at}｜模型：{snapshot.model_name}｜"
+            f"快照：{snapshot.created_at}"
+        )
+        return (
+            pd.DataFrame(snapshot.raw_reviews),
+            snapshot.analysis_goal,
+            report,
+            snapshot,
+        )
+
     goal = st.sidebar.text_area(
         "分析目标",
         value="了解用户最主要的不满，并找出优先改进方向",
         help="动态主题会结合这个目标，但不会使用写死的行业分类。",
+        key="analysis_goal",
     )
 
     if source == "上传 CSV / JSON":
@@ -160,8 +215,8 @@ def render_sidebar() -> tuple[pd.DataFrame, str, CollectionReport | None]:
         )
         if uploaded_file is None:
             st.sidebar.info("尚未上传文件，暂时显示内置示例数据。")
-            return load_sample_reviews(), goal, None
-        return load_uploaded_reviews(uploaded_file), goal, None
+            return load_sample_reviews(), goal, None, None
+        return load_uploaded_reviews(uploaded_file), goal, None, None
 
     if source == "美国区 App Store 实时采集":
         app_url = st.sidebar.text_input(
@@ -171,11 +226,13 @@ def render_sidebar() -> tuple[pd.DataFrame, str, CollectionReport | None]:
                 "workout-for-women-home-gym/id839285684"
             ),
             help="可以粘贴中国区链接，但采集始终强制使用美国区 storefront。",
+            key="app_store_url",
         )
         requested_count = st.sidebar.select_slider(
             "最多采集评论数",
             options=[50, 100, 200, 300, 500],
             value=100,
+            key="requested_review_count",
         )
         live_key = analysis_fingerprint(
             [{"app_url": app_url, "requested_count": requested_count}],
@@ -209,15 +266,21 @@ def render_sidebar() -> tuple[pd.DataFrame, str, CollectionReport | None]:
             st.sidebar.success(
                 f"已采集 {report.collected_review_count} 条美国区评论"
             )
-            return pd.DataFrame(saved_records), goal, report
+            return pd.DataFrame(saved_records), goal, report, None
         if st.session_state.get("live_collection_error"):
             st.sidebar.error(st.session_state["live_collection_error"])
         st.sidebar.info(
             "点击采集后再开始分析。若实时接口失败，请切换到 CSV/JSON；系统不会补造评论。"
         )
+        if DEMO_SNAPSHOT_FILE.exists():
+            st.sidebar.button(
+                "使用真实缓存 Demo",
+                on_click=activate_demo_source,
+                key="collection_use_demo",
+            )
         st.stop()
 
-    return load_sample_reviews(), goal, None
+    return load_sample_reviews(), goal, None, None
 
 
 def render_collection_report(report: CollectionReport) -> None:
@@ -301,6 +364,184 @@ def test_input_fingerprint(
         sort_keys=True,
     )
     return sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def _snapshot_records(dataframe: pd.DataFrame) -> list[dict]:
+    """把 Pandas 值转换为稳定、可 JSON 序列化的快照记录。"""
+    return json.loads(dataframe.to_json(orient="records", date_format="iso"))
+
+
+def _current_model_name() -> str:
+    """只记录模型名称，不读取或保存 API Key。"""
+    try:
+        return ModelConfig.from_env().model
+    except ModelConfigError:
+        return "not-configured"
+
+
+def _source_type(
+    raw_reviews: pd.DataFrame, collection_report: CollectionReport | None
+) -> str:
+    if collection_report is not None:
+        return "app_store_us"
+    sources = set(raw_reviews.get("source", pd.Series(dtype=str)).dropna())
+    if sources and sources == {"illustrative_sample"}:
+        return "illustrative_sample"
+    return "uploaded_file"
+
+
+def build_current_snapshot(
+    raw_reviews: pd.DataFrame,
+    analysis_goal: str,
+    current_fingerprint: str,
+    cleaning_report: CleaningReport,
+    collection_report: CollectionReport | None,
+) -> AnalysisSnapshot:
+    """把当前 session 中通过质量门的阶段结果整理为检查点。"""
+    return create_snapshot(
+        source_type=_source_type(raw_reviews, collection_report),
+        analysis_goal=analysis_goal,
+        analysis_fingerprint=current_fingerprint,
+        model_name=_current_model_name(),
+        raw_reviews=_snapshot_records(raw_reviews),
+        cleaning_report=asdict(cleaning_report),
+        collection_report=(
+            asdict(collection_report) if collection_report is not None else None
+        ),
+        topic_result=st.session_state.get("topic_result"),
+        finding_result=st.session_state.get("finding_result"),
+        planning_result=st.session_state.get("planning_result"),
+        test_result=st.session_state.get("test_result"),
+    )
+
+
+def persist_current_checkpoint(
+    raw_reviews: pd.DataFrame,
+    analysis_goal: str,
+    current_fingerprint: str,
+    cleaning_report: CleaningReport,
+    collection_report: CollectionReport | None,
+    *,
+    promote_demo: bool = False,
+) -> AnalysisSnapshot | None:
+    """保存最近成功阶段；完整真实运行可同时更新演示缓存。"""
+    try:
+        snapshot = build_current_snapshot(
+            raw_reviews,
+            analysis_goal,
+            current_fingerprint,
+            cleaning_report,
+            collection_report,
+        )
+        save_snapshot(snapshot, RUNTIME_CHECKPOINT_FILE)
+        if promote_demo and snapshot.is_complete_demo:
+            promote_complete_demo(snapshot, DEMO_SNAPSHOT_FILE)
+        return snapshot
+    except (AnalysisCacheError, ValueError) as error:
+        st.warning(f"分析成功，但本地检查点保存失败：{error}")
+        return None
+
+
+def restore_snapshot_state(
+    snapshot: AnalysisSnapshot, current_fingerprint: str
+) -> None:
+    """重新计算每层指纹后恢复结果，禁止跨输入误用旧结果。"""
+    if snapshot.analysis_fingerprint != current_fingerprint:
+        raise AnalysisCacheError("检查点与当前评论或分析目标不一致。")
+    for key in (
+        "topic_result",
+        "topic_fingerprint",
+        "finding_result",
+        "finding_fingerprint",
+        "planning_result",
+        "planning_fingerprint",
+        "test_result",
+        "test_fingerprint",
+    ):
+        st.session_state.pop(key, None)
+
+    if snapshot.topic_result is None:
+        return
+    st.session_state["topic_result"] = snapshot.topic_result.model_dump(
+        mode="json"
+    )
+    st.session_state["topic_fingerprint"] = current_fingerprint
+    finding_fingerprint = finding_input_fingerprint(
+        snapshot.topic_result, current_fingerprint
+    )
+    if snapshot.finding_result is None:
+        return
+    st.session_state["finding_result"] = snapshot.finding_result.model_dump(
+        mode="json"
+    )
+    st.session_state["finding_fingerprint"] = finding_fingerprint
+    planning_fingerprint = planning_input_fingerprint(
+        snapshot.finding_result, finding_fingerprint
+    )
+    if snapshot.planning_result is None:
+        return
+    st.session_state["planning_result"] = snapshot.planning_result.model_dump(
+        mode="json"
+    )
+    st.session_state["planning_fingerprint"] = planning_fingerprint
+    test_fingerprint = test_input_fingerprint(
+        snapshot.planning_result, planning_fingerprint
+    )
+    if snapshot.test_result is None:
+        return
+    st.session_state["test_result"] = snapshot.test_result.model_dump(mode="json")
+    st.session_state["test_fingerprint"] = test_fingerprint
+
+
+def render_failure_recovery(stage: str, current_fingerprint: str) -> None:
+    """在失败位置提供同输入检查点恢复和真实 Demo 降级。"""
+    stage_fields = {
+        "topic": ("topic_result", "动态主题"),
+        "finding": ("finding_result", "Evidence Finding"),
+        "planning": ("planning_result", "版本规划与 PRD"),
+        "test": ("test_result", "测试用例与追溯"),
+    }
+    field_name, label = stage_fields[stage]
+    try:
+        checkpoint = load_snapshot(RUNTIME_CHECKPOINT_FILE)
+    except AnalysisCacheError:
+        checkpoint = None
+    if (
+        checkpoint is not None
+        and checkpoint.analysis_fingerprint == current_fingerprint
+        and getattr(checkpoint, field_name) is not None
+    ):
+        if st.button(
+            f"使用上次成功的{label}",
+            key=f"recover_{stage}_checkpoint",
+        ):
+            restore_snapshot_state(checkpoint, current_fingerprint)
+            st.rerun()
+    if DEMO_SNAPSHOT_FILE.exists():
+        st.button(
+            "切换到真实缓存 Demo",
+            on_click=activate_demo_source,
+            key=f"recover_{stage}_demo",
+        )
+
+
+def render_sidebar_checkpoint_recovery(current_fingerprint: str) -> None:
+    """始终可见的最近成功进度恢复入口。"""
+    try:
+        checkpoint = load_snapshot(RUNTIME_CHECKPOINT_FILE)
+    except AnalysisCacheError:
+        return
+    if (
+        checkpoint.analysis_fingerprint == current_fingerprint
+        and checkpoint.completed_stage != "input"
+    ):
+        st.sidebar.divider()
+        st.sidebar.caption(
+            f"最近成功进度：{checkpoint.completed_stage} · {checkpoint.created_at}"
+        )
+        if st.sidebar.button("恢复上次成功进度", key="restore_last_progress"):
+            restore_snapshot_state(checkpoint, current_fingerprint)
+            st.rerun()
 
 
 def render_topic_result(
@@ -686,8 +927,18 @@ def main() -> None:
     st.caption("把真实用户评论转化为可执行产品改进方案")
 
     try:
-        raw_reviews, analysis_goal, collection_report = render_sidebar()
-    except (ValueError, json.JSONDecodeError, pd.errors.ParserError) as error:
+        (
+            raw_reviews,
+            analysis_goal,
+            collection_report,
+            loaded_snapshot,
+        ) = render_sidebar()
+    except (
+        ValueError,
+        json.JSONDecodeError,
+        pd.errors.ParserError,
+        AnalysisCacheError,
+    ) as error:
         st.error(f"文件读取失败：{error}")
         st.stop()
 
@@ -711,8 +962,17 @@ def main() -> None:
         review.model_dump(mode="json") for review in prepared_reviews
     ]
     current_fingerprint = analysis_fingerprint(prepared_records, analysis_goal)
+    demo_mode = loaded_snapshot is not None
+    if loaded_snapshot is not None:
+        try:
+            restore_snapshot_state(loaded_snapshot, current_fingerprint)
+        except AnalysisCacheError as error:
+            st.error(f"真实缓存无法恢复：{error}")
+            st.stop()
 
-    if model_configured():
+    if demo_mode:
+        st.sidebar.success("缓存演示：无需网络或模型调用")
+    elif model_configured():
         if st.session_state.get("model_call_verified"):
             st.sidebar.success("模型调用：已验证")
         else:
@@ -720,6 +980,8 @@ def main() -> None:
     else:
         st.sidebar.warning("模型配置：未完成（参照 .env.example）")
 
+    if not demo_mode:
+        render_sidebar_checkpoint_recovery(current_fingerprint)
     selected_page = render_page_navigation()
 
     if collection_report is not None:
@@ -824,7 +1086,9 @@ def main() -> None:
                 "不能作为最终 Homework 的真实用户结论。"
             )
 
-        if st.button("开始动态主题分析", type="primary"):
+        if st.button(
+            "开始动态主题分析", type="primary", disabled=demo_mode
+        ):
             st.session_state.pop("topic_result", None)
             st.session_state.pop("topic_fingerprint", None)
             st.session_state.pop("finding_result", None)
@@ -842,10 +1106,18 @@ def main() -> None:
                 st.session_state["model_call_verified"] = False
                 st.error(str(error))
                 st.info("主题阶段已停止，不会生成 Finding、PRD 或测试用例。")
+                render_failure_recovery("topic", current_fingerprint)
             else:
                 st.session_state["model_call_verified"] = True
                 st.session_state["topic_result"] = result.model_dump(mode="json")
                 st.session_state["topic_fingerprint"] = current_fingerprint
+                persist_current_checkpoint(
+                    raw_reviews,
+                    analysis_goal,
+                    current_fingerprint,
+                    cleaning_report,
+                    collection_report,
+                )
                 st.success("动态主题发现完成，引用校验通过。")
 
         saved_result = st.session_state.get("topic_result")
@@ -881,7 +1153,9 @@ def main() -> None:
             current_finding_fingerprint = finding_input_fingerprint(
                 current_topic_result, current_fingerprint
             )
-            if st.button("生成 Evidence Finding", type="primary"):
+            if st.button(
+                "生成 Evidence Finding", type="primary", disabled=demo_mode
+            ):
                 st.session_state.pop("finding_result", None)
                 st.session_state.pop("finding_fingerprint", None)
                 st.session_state.pop("planning_result", None)
@@ -898,12 +1172,20 @@ def main() -> None:
                 except (ModelConfigError, FindingGenerationError) as error:
                     st.error(str(error))
                     st.info("Finding 阶段已停止，不会生成 PRD 或测试用例。")
+                    render_failure_recovery("finding", current_fingerprint)
                 else:
                     st.session_state["finding_result"] = (
                         finding_result.model_dump(mode="json")
                     )
                     st.session_state["finding_fingerprint"] = (
                         current_finding_fingerprint
+                    )
+                    persist_current_checkpoint(
+                        raw_reviews,
+                        analysis_goal,
+                        current_fingerprint,
+                        cleaning_report,
+                        collection_report,
                     )
                     st.success("Evidence Finding 生成完成，质量门校验通过。")
 
@@ -963,7 +1245,9 @@ def main() -> None:
             current_planning_fingerprint = planning_input_fingerprint(
                 current_finding_result, current_finding_fingerprint
             )
-            if st.button("生成版本规划与 PRD", type="primary"):
+            if st.button(
+                "生成版本规划与 PRD", type="primary", disabled=demo_mode
+            ):
                 st.session_state.pop("planning_result", None)
                 st.session_state.pop("planning_fingerprint", None)
                 st.session_state.pop("test_result", None)
@@ -979,12 +1263,20 @@ def main() -> None:
                 except (ModelConfigError, ProductPlanningError) as error:
                     st.error(str(error))
                     st.info("PRD 阶段已停止，不会生成没有可靠来源的版本承诺。")
+                    render_failure_recovery("planning", current_fingerprint)
                 else:
                     st.session_state["planning_result"] = (
                         planning_result.model_dump(mode="json")
                     )
                     st.session_state["planning_fingerprint"] = (
                         current_planning_fingerprint
+                    )
+                    persist_current_checkpoint(
+                        raw_reviews,
+                        analysis_goal,
+                        current_fingerprint,
+                        cleaning_report,
+                        collection_report,
                     )
                     st.success("版本规划与 PRD 生成完成，Finding 覆盖和追溯校验通过。")
 
@@ -1057,7 +1349,11 @@ def main() -> None:
             current_test_fingerprint = test_input_fingerprint(
                 current_plan_result, current_planning_fingerprint
             )
-            if st.button("生成测试用例并检查完整追溯", type="primary"):
+            if st.button(
+                "生成测试用例并检查完整追溯",
+                type="primary",
+                disabled=demo_mode,
+            ):
                 st.session_state.pop("test_result", None)
                 st.session_state.pop("test_fingerprint", None)
                 try:
@@ -1071,6 +1367,7 @@ def main() -> None:
                 except (ModelConfigError, TestGenerationError) as error:
                     st.error(str(error))
                     st.info("测试阶段已停止，不会展示引用断裂或覆盖不足的测试结果。")
+                    render_failure_recovery("test", current_fingerprint)
                 else:
                     st.session_state["test_result"] = test_result.model_dump(
                         mode="json"
@@ -1078,6 +1375,18 @@ def main() -> None:
                     st.session_state["test_fingerprint"] = (
                         current_test_fingerprint
                     )
+                    snapshot = persist_current_checkpoint(
+                        raw_reviews,
+                        analysis_goal,
+                        current_fingerprint,
+                        cleaning_report,
+                        collection_report,
+                        promote_demo=True,
+                    )
+                    if snapshot is not None and snapshot.is_complete_demo:
+                        st.success(
+                            "真实美国区完整结果已同步保存为离线 Demo 缓存。"
+                        )
                     st.success("测试用例生成完成，端到端追溯质量门通过。")
 
             saved_test_result = st.session_state.get("test_result")
@@ -1107,7 +1416,8 @@ def main() -> None:
         st.success("✅ 6. 版本规划、PRD、需求边界与 Finding → Review 追溯")
         st.success("✅ 7. 正常/异常/边界测试与端到端追溯质量门")
         st.success("✅ 8. 美国区 App Store 实时采集、审计报告与文件降级")
-        st.info("⏳ 9. 真实缓存 Demo、导出和错误恢复（下一阶段）")
+        st.success("✅ 9. 真实缓存 Demo、阶段检查点与失败一键恢复")
+        st.info("⏳ 10. 结果导出和新环境最终验收（下一阶段）")
 
     st.divider()
     st.caption(

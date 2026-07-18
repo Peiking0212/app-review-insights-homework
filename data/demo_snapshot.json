@@ -1,0 +1,1958 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "SNAP-a436ff23e1ec-2026-07-18",
+  "created_at": "2026-07-18T11:53:13.626947+00:00",
+  "source_type": "app_store_us",
+  "analysis_goal": "了解用户最主要的不满，并找出优先改进方向",
+  "analysis_fingerprint": "a436ff23e1ec0484cc96530ad6efb655b7aae55551a8bfb90eac4f1a8e1bc215",
+  "model_name": "deepseek-v4-flash",
+  "raw_reviews": [
+    {
+      "review_id": "REV-AS-14312293284",
+      "source_id": "14312293284",
+      "title": "Really good app",
+      "content": "This app is the best. I definitely recommend to people who want to start. Work out It’s really good. And it helped loose weight. It was really good.👍👍👍👍👍👍",
+      "rating": 5,
+      "version": "8.4.26",
+      "published_at": "2026-07-16",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14308859067",
+      "source_id": "14308859067",
+      "title": "Download right now",
+      "content": "Love it",
+      "rating": 5,
+      "version": "8.4.27",
+      "published_at": "2026-07-15",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14307471563",
+      "source_id": "14307471563",
+      "title": "Love This App",
+      "content": "Finally I’m motivated!!! Daily!!!",
+      "rating": 5,
+      "version": "8.4.26",
+      "published_at": "2026-07-15",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14306466803",
+      "source_id": "14306466803",
+      "title": "No longer free????",
+      "content": "I’ve been using and loving this app for years. Now after recent update, it won’t let me do anything without a subscription. Still claims that you can use for free, so please fix this!!! Tried to contact and it said my email couldn’t be sent. Hoping they read these??",
+      "rating": 2,
+      "version": "8.4.27",
+      "published_at": "2026-07-15",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14303029084",
+      "source_id": "14303029084",
+      "title": "Paying",
+      "content": "I’m not paying to workout that is stupid",
+      "rating": 3,
+      "version": "8.4.27",
+      "published_at": "2026-07-14",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14297707993",
+      "source_id": "14297707993",
+      "title": "Poor handling of informing people of their subscription and where to find out information about it",
+      "content": "Hi,\n\nI subscribed to what I thought was a year plan for 39.99 and a 6 day trial. It did not let me know before the trail was over so I couldn’t cancel it. I was going to keep it but then discovered that it was 39.99 per month not 39.99 for the entire year. This was very misleading. When I tried to go into your app to see my subscription detail I could not find it any where. \n\nI would like a refund of the money that was taken out of my account. And I have already cancelled my subscription",
+      "rating": 1,
+      "version": "8.4.26",
+      "published_at": "2026-07-13",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14297668170",
+      "source_id": "14297668170",
+      "title": "Perfect for in your 50’s",
+      "content": "This is a great workout especially for women in their 50’s .",
+      "rating": 5,
+      "version": "8.4.26",
+      "published_at": "2026-07-13",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14291852699",
+      "source_id": "14291852699",
+      "title": "I cannot log into app",
+      "content": "I paid for a year membership and I cannot log into the account because it says it does not exist. I’ve tried to message the company and it says my message seems like spam and my inquiry won’t be submitted. I’ve tried multiple ways to submit to bypass this with no luck. There is no way to contact them otherwise and now I have 8 months that’s I paid for left that I do not have access to and all I want is to be able to access the app. So now what…",
+      "rating": 1,
+      "version": "8.4.26",
+      "published_at": "2026-07-11",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14290422468",
+      "source_id": "14290422468",
+      "title": "Full Body Slim",
+      "content": "Great App",
+      "rating": 5,
+      "version": "8.4.26",
+      "published_at": "2026-07-11",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14286721683",
+      "source_id": "14286721683",
+      "title": "capitalism ruined it",
+      "content": "i used this app back in 2023 to lose weight i downloaded it back in 2026 EVERYTHING requires money , everything is behind a paywall.. why make a app free if you’re gonna do mini in-app purchases for everything.",
+      "rating": 1,
+      "version": "8.4.26",
+      "published_at": "2026-07-10",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14280991777",
+      "source_id": "14280991777",
+      "title": "Crazy",
+      "content": "It really doesn’t work",
+      "rating": 3,
+      "version": "8.4.26",
+      "published_at": "2026-07-09",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14279948531",
+      "source_id": "14279948531",
+      "title": "Deleted after years of use",
+      "content": "I used to LOVE this app. It allowed me to access work outs on my own time, in my own way. It was free forever, then recently required 90sec ads to do workouts, which was fine. All of a sudden I couldn’t access anything without paying an outrageous price. Apparently for them, money is more important than helping all people now. Used to be great, now is not at all.",
+      "rating": 1,
+      "version": "8.4.26",
+      "published_at": "2026-07-08",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14277925854",
+      "source_id": "14277925854",
+      "title": "The SHEIN ads are out of control",
+      "content": "While you’re working out, the app will close and the Shein website will open and this will happen multiple times without you prompting or touching your phone",
+      "rating": 1,
+      "version": "8.4.25",
+      "published_at": "2026-07-08",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14276572019",
+      "source_id": "14276572019",
+      "title": "Great workouts",
+      "content": "I’m just starting and they have all types of exercises and all types of levels so u choose the one that’s best for you",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-07-07",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14276064361",
+      "source_id": "14276064361",
+      "title": "Free trial wasn’t free",
+      "content": "I wanted to try the free trial, I was told in app that there would be no charge until the end of the free trial and you guys immediately charged me! Now there is just a charge pending and I can’t pay for it. I’d like the trial to be cancelled so I don’t get charged the 39.99! I’m broke as hell and this is just ruining my experience. I used to use this app for free all the time and now suddenly I HAVE to pay or use a free trial? This is very disheartening. Please cancel my trial and cancel the payment so I don’t get charged. Thanks. Also wanted to just contact support for this but kept getting flagged as “spam” so yeah.",
+      "rating": 1,
+      "version": "8.4.26",
+      "published_at": "2026-07-07",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14275682276",
+      "source_id": "14275682276",
+      "title": "Updates",
+      "content": "I’ve had this app for over five years now and I’ve loved them, but hate how they kept going from completely free to charging for everything now. Really great app but not paying for it.",
+      "rating": 4,
+      "version": "8.4.26",
+      "published_at": "2026-07-07",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14275420028",
+      "source_id": "14275420028",
+      "title": "Cost",
+      "content": "I get it life is not easy you have to pay for stuff but really? Why does it have to cost money I want a workout im under 18 no job how do I pay? Still the question were understandable seemed like it was really gonna help",
+      "rating": 4,
+      "version": "8.4.26",
+      "published_at": "2026-07-07",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14274175102",
+      "source_id": "14274175102",
+      "title": "Nice",
+      "content": "I love it",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-07-07",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14271423099",
+      "source_id": "14271423099",
+      "title": "Very good!",
+      "content": "A very good app for motivation and everything, it’s fun to do for me at least, I love the warm ups and cool downs and demonstrations. Worth the money really.",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-07-06",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14270786563",
+      "source_id": "14270786563",
+      "title": "Started great, then locked up",
+      "content": "The app allows you to access almost everything at the start, and then begins to restrict. I’ve had the app for over a year now and I am unable to do anything at all. I cannot do saved workouts or any other plan that I used to be able to access after watching over a minute of ads.",
+      "rating": 2,
+      "version": "8.4.25",
+      "published_at": "2026-07-06",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14264918620",
+      "source_id": "14264918620",
+      "title": "Idk",
+      "content": "It made me pay after the first day and u didn’t like it",
+      "rating": 1,
+      "version": "8.4.25",
+      "published_at": "2026-07-04",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14260733949",
+      "source_id": "14260733949",
+      "title": "Maggie",
+      "content": "It's  ok",
+      "rating": 4,
+      "version": "8.4.25",
+      "published_at": "2026-07-03",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14254614594",
+      "source_id": "14254614594",
+      "title": "The best!!",
+      "content": "This app has everything you need to get in shape and be healthy. Very easy to follow good music and great workouts. Highly recommended.",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-07-02",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14251432995",
+      "source_id": "14251432995",
+      "title": "Very good app",
+      "content": "I am really enjoying this app… lots of different options.",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-07-01",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14250373918",
+      "source_id": "14250373918",
+      "title": "Love this app!",
+      "content": "Finally found an app that fits my workout needs!",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-07-01",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14249980354",
+      "source_id": "14249980354",
+      "title": "Great app, downloads impossible",
+      "content": "This app and the workouts are great. Even with a paid subscription, you cannot download. No help or steps from online searches help.",
+      "rating": 3,
+      "version": "8.4.25",
+      "published_at": "2026-07-01",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14246967026",
+      "source_id": "14246967026",
+      "title": "Cannot access paid subscription",
+      "content": "I was logged out of the app recently and cannot log back in to access my workouts and benefits of my paid subscription",
+      "rating": 3,
+      "version": "8.4.25",
+      "published_at": "2026-06-30",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14243194565",
+      "source_id": "14243194565",
+      "title": "Nothing but paywalls",
+      "content": "Is there anything that is free on this app anymore?? Even workouts I had previously saved now ask you to pay. Ridiculous",
+      "rating": 1,
+      "version": "8.4.25",
+      "published_at": "2026-06-29",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14241644246",
+      "source_id": "14241644246",
+      "title": "Great for beginners",
+      "content": "I’ve been off and on with the Sweat app but it’s a lot of dedication from the start. Workout for Women from home and gym it’s great for beginners and it’s not killer or time consuming. I can fit 20 min or less anytime in between my schedule. Works out aren’t out of this world and one can sustain it for beginners. Def recommend!",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-06-29",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14229833137",
+      "source_id": "14229833137",
+      "title": "Good, but...",
+      "content": "I LOVE this app. Great workouts for all ages. But... I am on the free version and there are a lot of things that I can't do without paying. Still has good options for the free version but please allow the free version to make me able to do more things.",
+      "rating": 4,
+      "version": "8.4.25",
+      "published_at": "2026-06-26",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14227812994",
+      "source_id": "14227812994",
+      "title": "Thank you",
+      "content": "Im\nLiking the app so far thanks so Much!!!",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-06-26",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14225692756",
+      "source_id": "14225692756",
+      "title": "￼So great",
+      "content": "Short workouts perfect for anyday",
+      "rating": 5,
+      "version": "8.4.25",
+      "published_at": "2026-06-25",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14222226181",
+      "source_id": "14222226181",
+      "title": "Scam and expensive",
+      "content": "Cancelled my subscription and then received not one but two charges in the same day totaling almost $100!!! Don’t do it! Not worth it.",
+      "rating": 1,
+      "version": "8.4.25",
+      "published_at": "2026-06-24",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14221168828",
+      "source_id": "14221168828",
+      "title": "Subscriptions",
+      "content": "The is a good workout app but the only thing that i don’t like is that it said it was giving me a free subscription because it was my first time using this app, i get the subscription and its charged me 30 dollars idk if i did something wrong but warning, just stick to the free version and don’t be scammed like me 😭",
+      "rating": 3,
+      "version": "8.4.25",
+      "published_at": "2026-06-24",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14220597773",
+      "source_id": "14220597773",
+      "title": "The Best Workout App in the World",
+      "content": "Update, June 24, 2026 - I’ve been using this app for a while and I like it even more than when I started.  One of the rare and fantastic things about the workouts is that they are genuinely well thought out, really nicely put together.  It seems a person sat down and thought this through and put the exercises in the right order and the most beneficial exercises.  So, there are no surprises.  The workouts do what they say they will do.  Anyway, I do wish they’d put out some new PROGRAMS, though I’m sure at some point they will.   ———-         I am absolutely crazy about this app.  It has everything, almost (no tai chi, yet).  All types of exercises and yoga . . . Of various lengths.  I am on a 30 day dumbbell program right now.  The variety of exercises in that one program is amazing.  I’ve never seen some of those moves.  Also, doing a 7-minute workout in the morning; love those unique moves, too.  Basically, you get this and you don’t need anything else.  I downloaded dozens of workout apps and this is the one who stood out way, way above the others; nothing even compares. Totally love it!",
+      "rating": 5,
+      "version": "8.4.24",
+      "published_at": "2026-06-24",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14217181753",
+      "source_id": "14217181753",
+      "title": "Good but why subscription??!!😭",
+      "content": "The app is good! I had it once before but I stopped using it then I started using again then bam u have to get a subscription on the 4th day. I don’t know why but I just hope it won’t happen again. Anyway besides that the app is pretty good. Though I do suggest getting younger ages below 18 because some girls who want to change and get a bit healthier in 6th grade or older can be a better version of themselves.",
+      "rating": 5,
+      "version": "8.4.24",
+      "published_at": "2026-06-23",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14212862587",
+      "source_id": "14212862587",
+      "title": "Subscription",
+      "content": "Cancelled subscription and still got charged for it. No spot in app to manage no place on website either. Went to contact support and every time I hit submit it would say the request couldn’t be submitted because it’s spam. Don’t get app it not free it will make you sign up for a subscription and not let you cancel it.",
+      "rating": 1,
+      "version": "8.4.24",
+      "published_at": "2026-06-22",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14210920635",
+      "source_id": "14210920635",
+      "title": "Free Version So Frustrating",
+      "content": "I do not care if I have to watch ads but what I do care about is if I get a pop up screen with no continuation option only advertising the paid version. The workout is available with ads yet the interface traps you with their predatory ads.",
+      "rating": 1,
+      "version": "8.4.24",
+      "published_at": "2026-06-21",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14209021980",
+      "source_id": "14209021980",
+      "title": "Great app",
+      "content": "Love the variety of the workouts and being able to choose different programs",
+      "rating": 5,
+      "version": "8.4.23",
+      "published_at": "2026-06-21",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14204125134",
+      "source_id": "14204125134",
+      "title": "Free trial SCAM",
+      "content": "I downloaded this app yesterday and I wanted to try the 1-week free trial, but once I used the Apple Pay feature to subscribe to the free trial I was charged $29.99!? Dealing with my bank now to get my money back but it literally said I would not get charged until a week after.",
+      "rating": 1,
+      "version": "8.4.24",
+      "published_at": "2026-06-19",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14203283136",
+      "source_id": "14203283136",
+      "title": "My #1.",
+      "content": "Life changing. <3",
+      "rating": 5,
+      "version": "8.4.24",
+      "published_at": "2026-06-19",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14190183704",
+      "source_id": "14190183704",
+      "title": "My opinio",
+      "content": "It’s perfect",
+      "rating": 5,
+      "version": "8.4.23",
+      "published_at": "2026-06-16",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14187519047",
+      "source_id": "14187519047",
+      "title": "Kendall Serage WFW Review",
+      "content": "This workout app is probably the best option out there! It gives me so much motivation and excitement to get up and do the workouts in the morning. The best thing about it is that you can pick the type of workouts you want to focus on, whether it’s pilates, wall pilates, fitness, postpartum workouts, and more! Truly the best option.🫶🏻",
+      "rating": 5,
+      "version": "8.4.23",
+      "published_at": "2026-06-15",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14185702009",
+      "source_id": "14185702009",
+      "title": "Syn",
+      "content": "I had a trouble with a few things but I really love this app and I definitely feel like I wanna do more!",
+      "rating": 4,
+      "version": "8.4.23",
+      "published_at": "2026-06-15",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14174937162",
+      "source_id": "14174937162",
+      "title": "Stupid",
+      "content": "It let me start my training on the \"free app\" but the second day it was making me have to pay to continue so I don't recommend getting it unless u have the money to waste on it if u do it's pretty great",
+      "rating": 1,
+      "version": "8.4.23",
+      "published_at": "2026-06-12",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14174692818",
+      "source_id": "14174692818",
+      "title": "Workout at home",
+      "content": "Amazing",
+      "rating": 5,
+      "version": "8.4.21",
+      "published_at": "2026-06-12",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14174457575",
+      "source_id": "14174457575",
+      "title": "Easy to follow along",
+      "content": "Love the easy every day consistency. The daily quotes help me with my mental health and keep me motivated.",
+      "rating": 5,
+      "version": "8.4.21",
+      "published_at": "2026-06-12",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14167037105",
+      "source_id": "14167037105",
+      "title": "I’m giving it five stars so you can see it",
+      "content": "It’s OK for the first day, but as soon as you hit the second day, it fires in your face, a bunch of different ads to get their premium, which you have to pay for and you can’t get to the without paying",
+      "rating": 5,
+      "version": "8.4.22",
+      "published_at": "2026-06-10",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14166078145",
+      "source_id": "14166078145",
+      "title": "🧐🧐🧐🧐🧐🧐",
+      "content": "You told me a free trial for a week and the charged me $19.99 right away. What can I do?!",
+      "rating": 1,
+      "version": "8.4.21",
+      "published_at": "2026-06-10",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    },
+    {
+      "review_id": "REV-AS-14165948645",
+      "source_id": "14165948645",
+      "title": "They say is free but they charge you",
+      "content": "They offer a free week then when you accept they charge you. Also doesn’t let you use the free part of the app anymore. Very disappointed I used to love this app",
+      "rating": 1,
+      "version": "8.4.21",
+      "published_at": "2026-06-10",
+      "storefront": "us",
+      "source": "apple_public_rss_us"
+    }
+  ],
+  "cleaning_report": {
+    "raw_count": 50,
+    "invalid_review_id": 0,
+    "invalid_rating": 0,
+    "empty_content": 0,
+    "duplicate_review_id": 0,
+    "duplicate_content": 0,
+    "cleaned_count": 50
+  },
+  "collection_report": {
+    "app_id": "839285684",
+    "app_name": "Workout for Women: Home & Gym",
+    "storefront": "us",
+    "canonical_url": "https://apps.apple.com/us/app/id839285684",
+    "collected_at": "2026-07-18T11:51:08.796852+00:00",
+    "requested_review_count": 50,
+    "collected_review_count": 50,
+    "pages_attempted": 1,
+    "pages_succeeded": 1,
+    "empty_pages": [],
+    "duplicates_removed": 0,
+    "malformed_removed": 0,
+    "source_urls": [
+      "https://itunes.apple.com/us/rss/customerreviews/page=1/id=839285684/sortby=mostrecent/json"
+    ],
+    "limitations": []
+  },
+  "topic_result": {
+    "insights": [
+      {
+        "insight_id": "INSIGHT-0001",
+        "review_id": "REV-AS-14312293284",
+        "statement": "用户认为这款应用是最好的健身入门工具，帮助成功减肥。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0002",
+        "review_id": "REV-AS-14308859067",
+        "statement": "用户非常喜欢这款应用，强烈推荐下载。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0003",
+        "review_id": "REV-AS-14307471563",
+        "statement": "用户表示这款应用让自己每天都有动力坚持锻炼。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0004",
+        "review_id": "REV-AS-14306466803",
+        "statement": "用户抱怨更新后不付费就无法使用任何功能，但应用仍声称免费。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0005",
+        "review_id": "REV-AS-14306466803",
+        "statement": "用户尝试联系客服但邮件发送失败，只能寄希望于在评论中被看到。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0006",
+        "review_id": "REV-AS-14303029084",
+        "statement": "用户认为为锻炼付费是不合理的。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0007",
+        "review_id": "REV-AS-14297707993",
+        "statement": "用户投诉订阅信息不透明，以为$39.99是年费，实际是月费，感到被误导。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0008",
+        "review_id": "REV-AS-14297707993",
+        "statement": "用户在应用内找不到查看订阅详情的入口，缺乏订阅管理功能。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0009",
+        "review_id": "REV-AS-14297668170",
+        "statement": "用户认为这款应用非常适合50多岁的女性锻炼。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0010",
+        "review_id": "REV-AS-14291852699",
+        "statement": "用户付费购买了年费会员但无法登录，系统提示账号不存在。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0011",
+        "review_id": "REV-AS-14291852699",
+        "statement": "用户尝试联系公司但消息被系统判定为垃圾邮件无法提交，且无其他联系方式。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0012",
+        "review_id": "REV-AS-14290422468",
+        "statement": "用户认为应用很好。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0013",
+        "review_id": "REV-AS-14286721683",
+        "statement": "用户认为应用从免费变为所有功能都需要付费，被付费墙完全锁住。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0014",
+        "review_id": "REV-AS-14280991777",
+        "statement": "用户认为这款应用实际上没有效果。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0015",
+        "review_id": "REV-AS-14279948531",
+        "statement": "用户曾长期喜爱该应用，但现在不付费就什么都无法使用，且价格过高。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0016",
+        "review_id": "REV-AS-14277925854",
+        "statement": "用户在锻炼过程中应用会自动关闭并打开Shein网站，且多次发生。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0017",
+        "review_id": "REV-AS-14276572019",
+        "statement": "用户喜欢应用提供的多种类型的锻炼和不同难度等级。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0018",
+        "review_id": "REV-AS-14276064361",
+        "statement": "用户使用免费试用但被立即扣费，而非试用结束后才扣费。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0019",
+        "review_id": "REV-AS-14276064361",
+        "statement": "用户尝试联系客服但消息被系统标记为垃圾邮件。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0020",
+        "review_id": "REV-AS-14275682276",
+        "statement": "用户喜爱应用多年，但不满于从完全免费变为几乎所有功能都需要付费。",
+        "sentiment": "mixed"
+      },
+      {
+        "insight_id": "INSIGHT-0021",
+        "review_id": "REV-AS-14275420028",
+        "statement": "用户认为应用收费不合理，自己是未成年无收入无法支付。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0022",
+        "review_id": "REV-AS-14274175102",
+        "statement": "用户表示非常喜欢这款应用。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0023",
+        "review_id": "REV-AS-14271423099",
+        "statement": "用户认为应用值得付费，提供了良好的激励、热身、冷身和动作演示。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0024",
+        "review_id": "REV-AS-14270786563",
+        "statement": "用户抱怨应用一开始几乎全部可用，但使用一年后所有功能都被限制，即使看广告也无法访问。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0025",
+        "review_id": "REV-AS-14264918620",
+        "statement": "用户被收取费用后感到不满，认为应用在第一天后就开始收费",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0026",
+        "review_id": "REV-AS-14260733949",
+        "statement": "用户认为应用体验一般，评价中等",
+        "sentiment": "neutral"
+      },
+      {
+        "insight_id": "INSIGHT-0027",
+        "review_id": "REV-AS-14254614594",
+        "statement": "用户认为应用拥有塑形和健康所需的一切功能",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0028",
+        "review_id": "REV-AS-14254614594",
+        "statement": "用户认为应用易于跟随、音乐好、锻炼效果好",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0029",
+        "review_id": "REV-AS-14251432995",
+        "statement": "用户喜欢应用提供的多种不同锻炼选项",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0030",
+        "review_id": "REV-AS-14250373918",
+        "statement": "用户认为该应用完美满足自己的锻炼需求",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0031",
+        "review_id": "REV-AS-14249980354",
+        "statement": "用户认为应用本身的锻炼内容很好",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0032",
+        "review_id": "REV-AS-14249980354",
+        "statement": "用户即使有付费订阅也无法下载内容，且找不到解决方案",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0033",
+        "review_id": "REV-AS-14246967026",
+        "statement": "用户被登出后无法重新登录以访问已付费订阅的锻炼和权益",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0034",
+        "review_id": "REV-AS-14243194565",
+        "statement": "用户对应用到处是付费墙感到愤怒，连之前保存的锻炼也需付费",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0035",
+        "review_id": "REV-AS-14241644246",
+        "statement": "用户认为该应用对初学者友好，锻炼不耗时且可持续",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0036",
+        "review_id": "REV-AS-14229833137",
+        "statement": "用户喜欢该应用的锻炼内容，认为适合所有年龄段",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0037",
+        "review_id": "REV-AS-14229833137",
+        "statement": "免费版用户希望应用允许免费用户能做更多事情",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0038",
+        "review_id": "REV-AS-14227812994",
+        "statement": "用户对应用的使用体验表示满意和感谢",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0039",
+        "review_id": "REV-AS-14225692756",
+        "statement": "用户喜欢应用提供的短时锻炼，适合任何一天",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0040",
+        "review_id": "REV-AS-14222226181",
+        "statement": "用户取消订阅后同一天被扣两次费用，总计近100美元，认为应用是骗局且昂贵",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0041",
+        "review_id": "REV-AS-14221168828",
+        "statement": "用户认为应用声称提供免费首次订阅却实际扣了30美元，感到被欺骗",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0042",
+        "review_id": "REV-AS-14220597773",
+        "statement": "用户认为该应用是最好用的锻炼应用，锻炼设计精心、顺序合理、效果显著",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0043",
+        "review_id": "REV-AS-14220597773",
+        "statement": "用户希望应用能推出新的锻炼计划/课程",
+        "sentiment": "neutral"
+      },
+      {
+        "insight_id": "INSIGHT-0044",
+        "review_id": "REV-AS-14217181753",
+        "statement": "用户喜欢该应用，但不满于在第4天就必须订阅付费",
+        "sentiment": "mixed"
+      },
+      {
+        "insight_id": "INSIGHT-0045",
+        "review_id": "REV-AS-14217181753",
+        "statement": "用户建议应用增加面向18岁以下青少年的锻炼内容",
+        "sentiment": "neutral"
+      },
+      {
+        "insight_id": "INSIGHT-0046",
+        "review_id": "REV-AS-14212862587",
+        "statement": "用户取消订阅后仍被扣费，且应用内和网站上均找不到管理订阅的地方",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0047",
+        "review_id": "REV-AS-14212862587",
+        "statement": "用户联系客服时提交请求总被系统判定为垃圾信息而失败",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0048",
+        "review_id": "REV-AS-14210920635",
+        "statement": "用户不介意看广告，但厌恶付费弹窗没有继续选项，界面用掠夺性广告强制推销付费版",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0049",
+        "review_id": "REV-AS-14209021980",
+        "statement": "用户喜欢锻炼的多样性以及能选择不同计划的功能",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0050",
+        "review_id": "REV-AS-14204125134",
+        "statement": "用户尝试免费试用却被立即扣费29.99美元，认为免费试用是骗局",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0051",
+        "review_id": "REV-AS-14203283136",
+        "statement": "用户认为该应用改变了生活，给予最高评价。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0052",
+        "review_id": "REV-AS-14190183704",
+        "statement": "用户认为该应用完美无缺。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0053",
+        "review_id": "REV-AS-14187519047",
+        "statement": "用户认为该应用在健身类中是最佳选择，提供了丰富的训练类型选择如普拉提、产后恢复等。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0054",
+        "review_id": "REV-AS-14187519047",
+        "statement": "用户表示该应用给了用户极大的动力和期待去早起锻炼。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0055",
+        "review_id": "REV-AS-14185702009",
+        "statement": "用户虽然遇到了一些问题，但仍然非常喜欢该应用并愿意继续使用。",
+        "sentiment": "mixed"
+      },
+      {
+        "insight_id": "INSIGHT-0056",
+        "review_id": "REV-AS-14174937162",
+        "statement": "用户在第二天就被要求付费才能继续使用，认为免费体验是虚假宣传。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0057",
+        "review_id": "REV-AS-14174692818",
+        "statement": "用户认为该应用非常好用。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0058",
+        "review_id": "REV-AS-14174457575",
+        "statement": "用户喜欢每天一致的简单锻炼，以及每日引言对心理健康的激励作用。",
+        "sentiment": "positive"
+      },
+      {
+        "insight_id": "INSIGHT-0059",
+        "review_id": "REV-AS-14167037105",
+        "statement": "用户表示第二天就弹出大量推广高级版（需付费）的广告，无法继续免费使用。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0060",
+        "review_id": "REV-AS-14166078145",
+        "statement": "用户声称宣称是免费试用一周，但立即被扣款19.99美元，感到被欺骗。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0061",
+        "review_id": "REV-AS-14165948645",
+        "statement": "用户表示应用声称免费试用一周，但接受后立即扣款，且不再允许使用免费部分。",
+        "sentiment": "negative"
+      },
+      {
+        "insight_id": "INSIGHT-0062",
+        "review_id": "REV-AS-14165948645",
+        "statement": "用户曾经很喜欢该应用，但被扣费体验后非常失望。",
+        "sentiment": "negative"
+      }
+    ],
+    "topics": [
+      {
+        "topic_id": "TOPIC-001",
+        "name": "付费模式与订阅问题",
+        "description": "用户抱怨应用从免费变为几乎全部功能都需要付费、付费墙完全锁住内容、订阅价格过高、取消订阅后仍被扣费、免费试用被立即扣费而非试用结束后扣费、订阅信息不透明（如月费被误认为年费）、免费版功能被大幅限制等。",
+        "insight_ids": [
+          "INSIGHT-0004",
+          "INSIGHT-0006",
+          "INSIGHT-0007",
+          "INSIGHT-0013",
+          "INSIGHT-0015",
+          "INSIGHT-0018",
+          "INSIGHT-0020",
+          "INSIGHT-0021",
+          "INSIGHT-0024",
+          "INSIGHT-0025",
+          "INSIGHT-0034",
+          "INSIGHT-0037",
+          "INSIGHT-0040",
+          "INSIGHT-0041",
+          "INSIGHT-0044",
+          "INSIGHT-0048",
+          "INSIGHT-0050",
+          "INSIGHT-0056",
+          "INSIGHT-0059",
+          "INSIGHT-0060",
+          "INSIGHT-0061",
+          "INSIGHT-0062"
+        ],
+        "representative_review_ids": [
+          "REV-AS-14165948645",
+          "REV-AS-14306466803",
+          "REV-AS-14303029084"
+        ]
+      },
+      {
+        "topic_id": "TOPIC-002",
+        "name": "账号登录与技术故障",
+        "description": "用户付费后无法登录、系统提示账号不存在、被登出后无法重新登录访问已付费订阅内容、即使有付费订阅也无法下载内容、锻炼过程中应用自动关闭并跳转其他网站。",
+        "insight_ids": [
+          "INSIGHT-0010",
+          "INSIGHT-0016",
+          "INSIGHT-0032",
+          "INSIGHT-0033"
+        ],
+        "representative_review_ids": [
+          "REV-AS-14291852699",
+          "REV-AS-14277925854",
+          "REV-AS-14249980354"
+        ]
+      },
+      {
+        "topic_id": "TOPIC-003",
+        "name": "客服与联系渠道问题",
+        "description": "用户尝试联系客服时邮件发送失败、提交请求被系统判定为垃圾信息而失败、应用内找不到订阅管理入口、缺乏其他有效的客服联系方式。",
+        "insight_ids": [
+          "INSIGHT-0005",
+          "INSIGHT-0008",
+          "INSIGHT-0011",
+          "INSIGHT-0019",
+          "INSIGHT-0046",
+          "INSIGHT-0047"
+        ],
+        "representative_review_ids": [
+          "REV-AS-14212862587",
+          "REV-AS-14306466803",
+          "REV-AS-14297707993"
+        ]
+      },
+      {
+        "topic_id": "TOPIC-004",
+        "name": "锻炼内容与效果认可",
+        "description": "用户认为应用是最好的健身入门工具、提供了多种类型和难度等级的锻炼、锻炼内容精心设计、效果显著、适合不同年龄和人群、激励用户坚持锻炼。",
+        "insight_ids": [
+          "INSIGHT-0001",
+          "INSIGHT-0002",
+          "INSIGHT-0003",
+          "INSIGHT-0009",
+          "INSIGHT-0012",
+          "INSIGHT-0017",
+          "INSIGHT-0022",
+          "INSIGHT-0023",
+          "INSIGHT-0027",
+          "INSIGHT-0028",
+          "INSIGHT-0029",
+          "INSIGHT-0030",
+          "INSIGHT-0031",
+          "INSIGHT-0035",
+          "INSIGHT-0036",
+          "INSIGHT-0038",
+          "INSIGHT-0039",
+          "INSIGHT-0042",
+          "INSIGHT-0049",
+          "INSIGHT-0051",
+          "INSIGHT-0052",
+          "INSIGHT-0053",
+          "INSIGHT-0054",
+          "INSIGHT-0057",
+          "INSIGHT-0058"
+        ],
+        "representative_review_ids": [
+          "REV-AS-14254614594",
+          "REV-AS-14187519047",
+          "REV-AS-14312293284"
+        ]
+      },
+      {
+        "topic_id": "TOPIC-005",
+        "name": "应用效果质疑与体验一般",
+        "description": "用户认为应用实际上没有效果，或对应用体验评价一般/中等。",
+        "insight_ids": [
+          "INSIGHT-0014",
+          "INSIGHT-0026"
+        ],
+        "representative_review_ids": [
+          "REV-AS-14280991777",
+          "REV-AS-14260733949"
+        ]
+      },
+      {
+        "topic_id": "TOPIC-006",
+        "name": "功能改进建议",
+        "description": "用户希望应用推出新的锻炼计划/课程，或增加面向18岁以下青少年的锻炼内容。",
+        "insight_ids": [
+          "INSIGHT-0043",
+          "INSIGHT-0045"
+        ],
+        "representative_review_ids": [
+          "REV-AS-14220597773",
+          "REV-AS-14217181753"
+        ]
+      },
+      {
+        "topic_id": "TOPIC-007",
+        "name": "整体喜爱但带有不满",
+        "description": "用户虽然遇到了一些问题（如付费限制），但仍然非常喜欢该应用并愿意继续使用，或曾长期喜爱该应用但现在不满。",
+        "insight_ids": [
+          "INSIGHT-0055"
+        ],
+        "representative_review_ids": [
+          "REV-AS-14185702009"
+        ]
+      }
+    ],
+    "other_review_ids": [],
+    "limitations": [
+      "批次 1：单条评论数据有限，部分评论内容简短，情绪判断基于有限文本。",
+      "批次 1：评论样本仅为该批次20条，不代表全部用户意见。",
+      "批次 1：未获取用户付费记录等后台数据，无法验证订阅争议的具体事实。",
+      "批次 2：评论REV-AS-14260733949内容过于简短('It\\'s ok')，无法提取更多具体信息",
+      "批次 2：评论REV-AS-14217181753中'希望不要再次发生'的表述较模糊，仅提取了可明确判断的部分",
+      "批次 3：评论样本量有限，未能覆盖所有用户群体；付费/免费政策的不满在低分评论中集中出现，高分评论用户未提及此问题。",
+      "本次聚合基于60条Atomic Insight，不涵盖所有可能的用户观点。Topic由动态归纳得出，未使用预设分类。各Topic的insight数量不等，不能代表用户群体比例。"
+    ],
+    "extraction_batch_count": 3
+  },
+  "finding_result": {
+    "findings": [
+      {
+        "finding_id": "FIND-001",
+        "title": "付费模式从免费转向全面收费导致用户强烈不满",
+        "description": "大量用户投诉应用从原先免费或几乎免费变为几乎所有功能都需要付费订阅，免费版功能被严重限制，付费墙完全锁住内容，连之前保存的锻炼也需要付费才能访问。用户认为这种做法是虚假宣传和欺骗。",
+        "source_topic_ids": [
+          "TOPIC-001",
+          "TOPIC-004"
+        ],
+        "supporting_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14286721683",
+          "REV-AS-14279948531",
+          "REV-AS-14275682276",
+          "REV-AS-14270786563",
+          "REV-AS-14243194565",
+          "REV-AS-14229833137",
+          "REV-AS-14217181753",
+          "REV-AS-14210920635",
+          "REV-AS-14174937162",
+          "REV-AS-14167037105"
+        ],
+        "conflicting_review_ids": [
+          "REV-AS-14271423099"
+        ],
+        "severity": "high",
+        "confidence": "medium",
+        "limitations": []
+      },
+      {
+        "finding_id": "FIND-002",
+        "title": "免费试用被立即扣费，用户感觉被欺骗",
+        "description": "多位用户反映应用承诺免费试用一周或免费体验，但接受后立即被扣款（金额从19.99到29.99美元不等），而非试用期结束后才扣费。用户认为这是欺骗行为。",
+        "source_topic_ids": [
+          "TOPIC-001"
+        ],
+        "supporting_review_ids": [
+          "REV-AS-14276064361",
+          "REV-AS-14204125134",
+          "REV-AS-14166078145",
+          "REV-AS-14165948645"
+        ],
+        "conflicting_review_ids": [],
+        "severity": "high",
+        "confidence": "medium",
+        "limitations": []
+      },
+      {
+        "finding_id": "FIND-003",
+        "title": "订阅信息不透明且取消订阅后仍被扣费",
+        "description": "用户投诉订阅信息存在误导（如$39.99被误以为年费实为月费），取消订阅后仍被收费，应用内和网站上找不到管理订阅的入口，无法查看订阅详情。",
+        "source_topic_ids": [
+          "TOPIC-001",
+          "TOPIC-003"
+        ],
+        "supporting_review_ids": [
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "conflicting_review_ids": [],
+        "severity": "critical",
+        "confidence": "medium",
+        "limitations": []
+      },
+      {
+        "finding_id": "FIND-004",
+        "title": "客服联系渠道不可用，用户问题无法解决",
+        "description": "用户尝试联系客服时邮件发送失败，或提交请求被系统判定为垃圾信息而无法提交。应用内缺乏有效的客服联系方式或订阅管理入口。",
+        "source_topic_ids": [
+          "TOPIC-003"
+        ],
+        "supporting_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14291852699",
+          "REV-AS-14276064361",
+          "REV-AS-14212862587"
+        ],
+        "conflicting_review_ids": [],
+        "severity": "high",
+        "confidence": "medium",
+        "limitations": []
+      },
+      {
+        "finding_id": "FIND-005",
+        "title": "付费用户无法登录账号访问已购内容",
+        "description": "用户付费购买年费/订阅会员后无法登录应用，系统提示账号不存在，或被登出后无法重新登录以访问已付费的锻炼和权益。",
+        "source_topic_ids": [
+          "TOPIC-002"
+        ],
+        "supporting_review_ids": [
+          "REV-AS-14291852699",
+          "REV-AS-14246967026"
+        ],
+        "conflicting_review_ids": [],
+        "severity": "critical",
+        "confidence": "medium",
+        "limitations": []
+      },
+      {
+        "finding_id": "FIND-006",
+        "title": "用户认为为锻炼付费不合理，价格过高",
+        "description": "部分用户明确表示不愿为锻炼付费，认为收费不合理，尤其未成年用户没有收入无法支付。另有用户抱怨价格过高。",
+        "source_topic_ids": [
+          "TOPIC-001"
+        ],
+        "supporting_review_ids": [
+          "REV-AS-14303029084",
+          "REV-AS-14275420028",
+          "REV-AS-14264918620",
+          "REV-AS-14165948645"
+        ],
+        "conflicting_review_ids": [],
+        "severity": "medium",
+        "confidence": "medium",
+        "limitations": []
+      }
+    ],
+    "discovery_items": [
+      {
+        "discovery_id": "DISC-001",
+        "title": "锻炼过程中应用自动跳转其他网站",
+        "reason": "仅有1条评论(INSIGHT-0016)提及应用在锻炼中自动关闭并打开Shein网站，证据为单一用户报告，需更多样本确认是否为普遍问题或个别设备异常。",
+        "source_topic_ids": [
+          "TOPIC-002"
+        ],
+        "review_ids": [
+          "REV-AS-14277925854"
+        ]
+      },
+      {
+        "discovery_id": "DISC-002",
+        "title": "付费订阅也无法下载内容",
+        "reason": "仅有1条评论(INSIGHT-0032)提到即使有付费订阅也无法下载内容，且找不到解决方案。证据不足，需更多用户反馈验证问题范围和具体情况。",
+        "source_topic_ids": [
+          "TOPIC-002"
+        ],
+        "review_ids": [
+          "REV-AS-14249980354"
+        ]
+      },
+      {
+        "discovery_id": "DISC-003",
+        "title": "应用效果质疑",
+        "reason": "仅有1条评论(INSIGHT-0014)明确认为应用无效，另有1条中等评价(INSIGHT-0026)内容过于简短。证据薄弱，无法形成明确问题。",
+        "source_topic_ids": [
+          "TOPIC-005"
+        ],
+        "review_ids": [
+          "REV-AS-14280991777",
+          "REV-AS-14260733949"
+        ]
+      },
+      {
+        "discovery_id": "DISC-004",
+        "title": "用户希望新增锻炼内容类型",
+        "reason": "INSIGHT-0043和INSIGHT-0045是用户建议类反馈（希望推出新计划、增加青少年内容），非用户使用痛点，且仅为个别用户建议，证据有限。",
+        "source_topic_ids": [
+          "TOPIC-006"
+        ],
+        "review_ids": [
+          "REV-AS-14220597773",
+          "REV-AS-14217181753"
+        ]
+      },
+      {
+        "discovery_id": "DISC-005",
+        "title": "整体喜爱但附带轻微不满",
+        "reason": "仅有1条混合评价INSIGHT-0055，用户虽遇到问题但仍喜欢应用。证据不足，无法提炼为明确问题。",
+        "source_topic_ids": [
+          "TOPIC-007"
+        ],
+        "review_ids": [
+          "REV-AS-14185702009"
+        ]
+      }
+    ],
+    "limitations": [
+      "批次 1：单条评论数据有限，部分评论内容简短，情绪判断基于有限文本。",
+      "批次 1：评论样本仅为该批次20条，不代表全部用户意见。",
+      "批次 1：未获取用户付费记录等后台数据，无法验证订阅争议的具体事实。",
+      "批次 2：评论REV-AS-14260733949内容过于简短('It\\'s ok')，无法提取更多具体信息",
+      "批次 2：评论REV-AS-14217181753中'希望不要再次发生'的表述较模糊，仅提取了可明确判断的部分",
+      "批次 3：评论样本量有限，未能覆盖所有用户群体；付费/免费政策的不满在低分评论中集中出现，高分评论用户未提及此问题。",
+      "本次聚合基于60条Atomic Insight，不涵盖所有可能的用户观点。Topic由动态归纳得出，未使用预设分类。各Topic的insight数量不等，不能代表用户群体比例。",
+      "批次聚合基于60条Atomic Insight，不涵盖所有可能的用户观点。",
+      "评论样本量有限，高分评论多为简短肯定，低分评论详细描述了付费和客服问题，可能存在沉默偏差。",
+      "未获取用户付费记录、后台日志等客观数据，无法验证订阅争议、扣费问题的具体事实。",
+      "部分评论内容简短（如'It's ok'），可提取信息有限。",
+      "Topic由动态归纳得出，未使用预设分类，各Topic的insight数量不等，不能代表用户群体实际比例。"
+    ]
+  },
+  "planning_result": {
+    "prd_title": "健身应用付费模式、订阅透明度与客服体系改进版本规划",
+    "executive_summary": "基于60条用户评论分析，用户最主要的不满集中在付费模式从免费转向全面收费（FIND-001）、免费试用即被扣费（FIND-002）、订阅信息不透明/取消后仍被扣费（FIND-003）、客服联系渠道不可用（FIND-004）以及付费用户无法登录访问已购内容（FIND-005）。这些问题的严重程度为高或严重（critical），直接影响用户信任与付费意愿。本规划通过三个版本逐步解决：V1修复最高频的信任欺诈问题（扣费逻辑、订阅管理入口、登录问题）；V2重构免费版体验并优化付费展示；V3建立可用的客服体系并完善账单透明度。",
+    "releases": [
+      {
+        "release": "V1",
+        "objective": "紧急修复信任与访问核心问题——解决免费试用立即扣费、订阅信息误导、付费用户无法登录三大欺诈感最强的问题",
+        "requirement_ids": [
+          "REQ-001",
+          "REQ-002"
+        ],
+        "rationale": "FIND-002和FIND-003涉及直接扣费欺骗和误导，是用户最愤怒的触点；FIND-005导致付费用户无法使用已购服务，直接影响续费意愿。这三个问题修复即可阻断最严重的信任危机。",
+        "risks": [
+          "扣费逻辑改动需与Apple Pay/Google Pay支付SDK方确认，可能涉及审核周期",
+          "账号不存在问题的根因需后端排查，可能涉及数据迁移遗留问题"
+        ]
+      },
+      {
+        "release": "V2",
+        "objective": "改善免费版可用性——确保免费用户有可实际使用的内容，同时规范付费展示",
+        "requirement_ids": [
+          "REQ-003",
+          "REQ-005"
+        ],
+        "rationale": "FIND-001表明大量用户因付费墙完全锁死所有内容而流失，恢复免费版基本可用性可挽回部分用户；FIND-003中价格误导需要与V1的订阅信息透明化配合，在展示侧统一规范。",
+        "risks": [
+          "免费版功能调整可能影响付费转化率，需AB测试验证",
+          "价格展示规范化可能暴露当前定价不具备竞争力的事实"
+        ]
+      },
+      {
+        "release": "V3",
+        "objective": "建立可用的客服体系——让用户遇到问题时能找到人解决",
+        "requirement_ids": [
+          "REQ-004"
+        ],
+        "rationale": "FIND-004的客服不可用问题需要后端表单过滤逻辑修复，且自助FAQ需要建立在V1/V2功能修复基础上才能有效（否则FAQ会指向已修复的问题）。放在最后发布是因为投诉量相对少于前两类问题，且需要前序版本稳定。",
+        "risks": [
+          "垃圾信息过滤器调整可能带来客服工单量激增，需准备人力响应",
+          "自助FAQ的准确率依赖V1/V2改动是否正确落地"
+        ]
+      }
+    ],
+    "requirements": [
+      {
+        "requirement_id": "REQ-001",
+        "title": "免费试用扣费逻辑修复与订阅信息透明化",
+        "release": "V1",
+        "priority": "P0",
+        "description": "修复免费试用期立即扣费的Bug，确保用户在试用期结束前不会被扣款；在订阅流程中清晰展示订阅周期（月/年）、金额、续费规则及取消方式，确保信息无歧义。",
+        "source_finding_ids": [
+          "FIND-002",
+          "FIND-003"
+        ],
+        "source_review_ids": [
+          "REV-AS-14276064361",
+          "REV-AS-14204125134",
+          "REV-AS-14166078145",
+          "REV-AS-14165948645",
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "in_scope": [
+          "免费试用流程中试用期结束前不得产生扣费",
+          "订阅确认页面展示：价格、周期（月/年）、续费说明、取消方式",
+          "应用内增加'订阅管理'入口，用户可查看当前订阅详情"
+        ],
+        "out_of_scope": [
+          "退款处理流程（需财务/法务单独评估）",
+          "第三方支付渠道（Apple Pay/Google Pay）的扣费机制改动"
+        ],
+        "acceptance_criteria": [
+          "新用户点击'免费试用'后，直到试用期最后一天均不产生实际扣款",
+          "订阅确认页面至少包含：价格金额、计费周期（月/年）、自动续费说明、取消订阅指引",
+          "应用内设置/账户页面存在'订阅管理'入口，点击后可展示当前订阅状态、下次扣费日期、取消订阅按钮",
+          "如用户取消订阅，取消后不再产生新的扣费"
+        ]
+      },
+      {
+        "requirement_id": "REQ-002",
+        "title": "付费用户登录与已购内容访问恢复",
+        "release": "V1",
+        "priority": "P0",
+        "description": "修复已付费用户无法登录账号（系统提示账号不存在）以及被登出后无法重新登录的问题，确保付费用户能够正常访问已购的锻炼内容和订阅权益。",
+        "source_finding_ids": [
+          "FIND-005"
+        ],
+        "source_review_ids": [
+          "REV-AS-14291852699",
+          "REV-AS-14246967026"
+        ],
+        "in_scope": [
+          "账号存在但登录提示'不存在'的Bug修复",
+          "已付费用户被登出后重新登录流程验证",
+          "登录成功后恢复对已购锻炼计划和权益的访问"
+        ],
+        "out_of_scope": [
+          "退款处理",
+          "跨平台账号合并"
+        ],
+        "acceptance_criteria": [
+          "已付费的账号即使长时间未登录，使用原凭证可成功登录且系统不报'账号不存在'",
+          "被登出后付费用户重新登录，可正常访问所有已购锻炼内容和订阅权益",
+          "登录失败的场景给出明确错误提示（如'密码错误'而非'账号不存在'）"
+        ]
+      },
+      {
+        "requirement_id": "REQ-003",
+        "title": "免费版核心功能体验保障",
+        "release": "V2",
+        "priority": "P1",
+        "description": "确保免费版用户能够持续使用至少一项可完成的锻炼功能，避免付费墙完全锁住所有内容；恢复用户之前保存的锻炼内容的可访问性（通过广告激励方式替代纯付费锁）。",
+        "source_finding_ids": [
+          "FIND-001"
+        ],
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14286721683",
+          "REV-AS-14279948531",
+          "REV-AS-14275682276",
+          "REV-AS-14270786563",
+          "REV-AS-14243194565",
+          "REV-AS-14229833137",
+          "REV-AS-14217181753",
+          "REV-AS-14210920635",
+          "REV-AS-14174937162",
+          "REV-AS-14167037105"
+        ],
+        "in_scope": [
+          "免费版至少保留一套完整锻炼计划可完成",
+          "用户之前保存/收藏的锻炼可通过观看广告解锁访问",
+          "付费墙弹窗提供明确的关闭/跳过选项，不强制跳转"
+        ],
+        "out_of_scope": [
+          "免费版功能完整度与付费版一致",
+          "移除所有付费推广弹窗"
+        ],
+        "acceptance_criteria": [
+          "未付费用户打开应用后，至少有一套完整的锻炼流程可以无付费完成",
+          "用户之前保存的锻炼内容，点击后提供'观看广告免费使用'选项",
+          "付费推广弹窗必须存在可点击的关闭按钮（X），不应锁死界面",
+          "新用户首次启动时，付费功能限制在第二天之后逐步展现，非首次使用立即锁死"
+        ]
+      },
+      {
+        "requirement_id": "REQ-004",
+        "title": "客服联系渠道修复与订阅问题自助解决",
+        "release": "V3",
+        "priority": "P1",
+        "description": "修复客服联系表单被系统误判为垃圾信息导致提交失败的问题；在应用内和网站提供清晰可用的客服联系入口及订阅问题自助解决流程。",
+        "source_finding_ids": [
+          "FIND-004"
+        ],
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14291852699",
+          "REV-AS-14276064361",
+          "REV-AS-14212862587"
+        ],
+        "in_scope": [
+          "客服联系表单'疑似垃圾信息'误判修复",
+          "应用内增加'帮助与支持'入口，包含常见问题（扣费争议、订阅管理、登录问题）自助指南",
+          "网站端同步提供客服联系方式"
+        ],
+        "out_of_scope": [
+          "实时在线客服/电话客服",
+          "退款自动处理流程"
+        ],
+        "acceptance_criteria": [
+          "用户通过应用内联系表单提交问题，不再因'垃圾信息'误判而被拒绝",
+          "应用内'帮助与支持'页面包含：扣费争议处理指引、订阅管理FAQ、账号问题FAQ",
+          "网站www（如有）存在可提交客服工单的入口或公开联系邮箱",
+          "客服相关功能在提交后给出明确反馈（提交成功确认+预计回复时间）"
+        ]
+      },
+      {
+        "requirement_id": "REQ-005",
+        "title": "付费提示与价格展示规范化",
+        "release": "V2",
+        "priority": "P0",
+        "description": "在应用中所有涉及付费的节点（功能解锁、内容访问、订阅购买）提供清晰、一致的价格展示，避免误导性表述（如将$39.99/月展示为年费）。",
+        "source_finding_ids": [
+          "FIND-003"
+        ],
+        "source_review_ids": [
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "in_scope": [
+          "所有付费提示统一展示：价格+周期（如$39.99/月、$99.99/年）",
+          "试用期剩余天数倒计时展示",
+          "订阅前展示'首次扣费金额及日期'"
+        ],
+        "out_of_scope": [
+          "定价策略调整（降价/优惠活动）",
+          "App Store/Google Play外部展示"
+        ],
+        "acceptance_criteria": [
+          "应用内任何付费提示中价格单位明确（/月、/年、一次性），无歧义",
+          "用户进入免费试用流程时，确认页面展示：'试用期X天，试用结束后将于YYYY-MM-DD扣款$XX.XX'",
+          "取消订阅流程中展示：'取消后当前权益将持续到YYYY-MM-DD，届时不会续费'"
+        ]
+      }
+    ],
+    "deferred_findings": [
+      {
+        "finding_id": "FIND-006",
+        "reason": "用户认为为锻炼付费不合理/价格过高属于定价策略与价值主张问题，而非功能Bug或体验问题。当前证据仅4条评论表达此类观点，且部分用户同时表达了对免费版限制的不满（已由REQC-003覆盖部分诉求），定价策略调整需要结合商业目标和用户付费意愿数据做更深入分析。",
+        "next_validation": "在V2免费版体验改善后，观察用户对付费转化率和评论中价格抱怨的变化；若修复后仍存在大量价格抱怨，则启动定价策略专项调研。"
+      }
+    ],
+    "product_hypotheses": [],
+    "limitations": [
+      "批次 1：单条评论数据有限，部分评论内容简短，情绪判断基于有限文本。",
+      "批次 1：评论样本仅为该批次20条，不代表全部用户意见。",
+      "批次 1：未获取用户付费记录等后台数据，无法验证订阅争议的具体事实。",
+      "批次 2：评论REV-AS-14260733949内容过于简短('It\\'s ok')，无法提取更多具体信息",
+      "批次 2：评论REV-AS-14217181753中'希望不要再次发生'的表述较模糊，仅提取了可明确判断的部分",
+      "批次 3：评论样本量有限，未能覆盖所有用户群体；付费/免费政策的不满在低分评论中集中出现，高分评论用户未提及此问题。",
+      "本次聚合基于60条Atomic Insight，不涵盖所有可能的用户观点。Topic由动态归纳得出，未使用预设分类。各Topic的insight数量不等，不能代表用户群体比例。",
+      "批次聚合基于60条Atomic Insight，不涵盖所有可能的用户观点。",
+      "评论样本量有限，高分评论多为简短肯定，低分评论详细描述了付费和客服问题，可能存在沉默偏差。",
+      "未获取用户付费记录、后台日志等客观数据，无法验证订阅争议、扣费问题的具体事实。",
+      "部分评论内容简短（如'It's ok'），可提取信息有限。",
+      "Topic由动态归纳得出，未使用预设分类，各Topic的insight数量不等，不能代表用户群体实际比例。",
+      "评论样本量有限，仅为分析批次中的60条Atomic Insight，不涵盖所有用户群体观点",
+      "未获取用户付费记录、后台日志等客观数据，无法验证订阅争议、扣费问题的具体事实",
+      "高分评论多为简短肯定，低分评论详细描述了付费和客服问题，可能存在沉默偏差",
+      "部分评论内容简短（如'It's ok'），可提取信息有限",
+      "Topic由动态归纳得出，未使用预设分类，各Topic的insight数量不等，不能代表用户群体实际比例"
+    ]
+  },
+  "test_result": {
+    "test_cases": [
+      {
+        "test_case_id": "TC-001",
+        "title": "免费试用期结束前不产生实际扣款",
+        "requirement_id": "REQ-001",
+        "source_review_ids": [
+          "REV-AS-14276064361",
+          "REV-AS-14204125134",
+          "REV-AS-14166078145",
+          "REV-AS-14165948645",
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P0",
+        "test_type": "normal",
+        "preconditions": [],
+        "steps": [
+          "用户打开应用，点击'免费试用'按钮",
+          "在订阅确认页面查看试用期说明",
+          "点击确认/订阅",
+          "在试用期最后一天之前，查看支付系统中该用户的扣费记录"
+        ],
+        "expected_results": [
+          "订阅确认页面展示试用期天数及试用期结束前不扣费的说明",
+          "用户确认后订阅成功，但支付系统中该用户无任何扣费记录",
+          "试用期最后一天之前，系统未产生实际扣款"
+        ]
+      },
+      {
+        "test_case_id": "TC-002",
+        "title": "试用期内取消订阅后不再产生扣费",
+        "requirement_id": "REQ-001",
+        "source_review_ids": [
+          "REV-AS-14276064361",
+          "REV-AS-14204125134",
+          "REV-AS-14166078145",
+          "REV-AS-14165948645",
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P0",
+        "test_type": "negative",
+        "preconditions": [],
+        "steps": [
+          "用户进入应用设置/账户页面，点击'订阅管理'",
+          "在订阅详情页面点击'取消订阅'按钮",
+          "确认取消",
+          "查看支付系统中该用户在试用期结束后是否有扣费记录"
+        ],
+        "expected_results": [
+          "订阅详情页展示取消订阅按钮",
+          "取消后页面提示：取消后当前权益将持续到试用期结束，届时不会续费",
+          "试用期结束后，支付系统无该用户的扣费记录"
+        ]
+      },
+      {
+        "test_case_id": "TC-003",
+        "title": "订阅确认页面展示完整订阅信息",
+        "requirement_id": "REQ-001",
+        "source_review_ids": [
+          "REV-AS-14276064361",
+          "REV-AS-14204125134",
+          "REV-AS-14166078145",
+          "REV-AS-14165948645",
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P0",
+        "test_type": "boundary",
+        "preconditions": [],
+        "steps": [
+          "用户点击'免费试用'进入订阅流程",
+          "在订阅确认页面逐项核对展示的所有信息"
+        ],
+        "expected_results": [
+          "订阅确认页面至少包含以下信息：价格金额、计费周期（明确标注/月或/年）、自动续费说明、取消订阅指引"
+        ]
+      },
+      {
+        "test_case_id": "TC-004",
+        "title": "已付费用户使用原凭证成功登录",
+        "requirement_id": "REQ-002",
+        "source_review_ids": [
+          "REV-AS-14291852699",
+          "REV-AS-14246967026"
+        ],
+        "priority": "P0",
+        "test_type": "normal",
+        "preconditions": [],
+        "steps": [
+          "用户打开应用进入登录页面",
+          "输入已付费账号的邮箱和密码",
+          "点击登录",
+          "登录成功后查看已购锻炼内容和订阅权益"
+        ],
+        "expected_results": [
+          "系统不报'账号不存在'，成功登录",
+          "登录后可访问所有已购锻炼内容（如锻炼计划、课程等）",
+          "订阅权益（如会员标识、高级功能）正常显示"
+        ]
+      },
+      {
+        "test_case_id": "TC-005",
+        "title": "登录失败时给出准确错误提示",
+        "requirement_id": "REQ-002",
+        "source_review_ids": [
+          "REV-AS-14291852699",
+          "REV-AS-14246967026"
+        ],
+        "priority": "P0",
+        "test_type": "negative",
+        "preconditions": [],
+        "steps": [
+          "用户输入正确的邮箱但输入错误的密码",
+          "点击登录",
+          "查看系统返回的错误提示"
+        ],
+        "expected_results": [
+          "系统返回错误提示'密码错误'，而非'账号不存在'"
+        ]
+      },
+      {
+        "test_case_id": "TC-006",
+        "title": "被登出后付费用户重新登录恢复访问",
+        "requirement_id": "REQ-002",
+        "source_review_ids": [
+          "REV-AS-14291852699",
+          "REV-AS-14246967026"
+        ],
+        "priority": "P0",
+        "test_type": "boundary",
+        "preconditions": [],
+        "steps": [
+          "用户在未登录状态下打开应用",
+          "输入原账号凭证（邮箱+密码）点击登录",
+          "登录成功后访问之前已购的锻炼计划和内容"
+        ],
+        "expected_results": [
+          "登录成功后，用户可正常访问所有已购锻炼内容和订阅权益",
+          "所有之前保存的锻炼数据（如进度、收藏）仍然保留并可访问"
+        ]
+      },
+      {
+        "test_case_id": "TC-007",
+        "title": "免费版至少有一套完整锻炼流程可无付费完成",
+        "requirement_id": "REQ-003",
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14286721683",
+          "REV-AS-14279948531",
+          "REV-AS-14275682276",
+          "REV-AS-14270786563",
+          "REV-AS-14243194565",
+          "REV-AS-14229833137",
+          "REV-AS-14217181753",
+          "REV-AS-14210920635",
+          "REV-AS-14174937162",
+          "REV-AS-14167037105"
+        ],
+        "priority": "P1",
+        "test_type": "normal",
+        "preconditions": [],
+        "steps": [
+          "用户打开应用",
+          "浏览首页/锻炼列表中的可用锻炼计划",
+          "选择任一锻炼计划并开始",
+          "完成整套锻炼流程（从开始到结束）"
+        ],
+        "expected_results": [
+          "至少有一套完整的锻炼计划可直接开始且无需付费",
+          "整套锻炼流程可以从头到尾完成，无付费墙阻断",
+          "锻炼完成后可正常查看锻炼结果/总结"
+        ]
+      },
+      {
+        "test_case_id": "TC-008",
+        "title": "付费推广弹窗提供可关闭按钮不锁死界面",
+        "requirement_id": "REQ-003",
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14286721683",
+          "REV-AS-14279948531",
+          "REV-AS-14275682276",
+          "REV-AS-14270786563",
+          "REV-AS-14243194565",
+          "REV-AS-14229833137",
+          "REV-AS-14217181753",
+          "REV-AS-14210920635",
+          "REV-AS-14174937162",
+          "REV-AS-14167037105"
+        ],
+        "priority": "P1",
+        "test_type": "negative",
+        "preconditions": [],
+        "steps": [
+          "用户打开应用进入任一功能页面",
+          "在付费推广弹窗出现时，查看弹窗上是否有关闭选项",
+          "点击关闭按钮（X）",
+          "关闭后继续操作应用"
+        ],
+        "expected_results": [
+          "付费推广弹窗上存在可点击的关闭按钮（X）",
+          "点击关闭按钮后弹窗消失",
+          "关闭后用户可继续正常使用应用，不被强制跳转至付费页面"
+        ]
+      },
+      {
+        "test_case_id": "TC-009",
+        "title": "新用户首次启动第二天之前不锁死免费功能",
+        "requirement_id": "REQ-003",
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14286721683",
+          "REV-AS-14279948531",
+          "REV-AS-14275682276",
+          "REV-AS-14270786563",
+          "REV-AS-14243194565",
+          "REV-AS-14229833137",
+          "REV-AS-14217181753",
+          "REV-AS-14210920635",
+          "REV-AS-14174937162",
+          "REV-AS-14167037105"
+        ],
+        "priority": "P1",
+        "test_type": "boundary",
+        "preconditions": [],
+        "steps": [
+          "用户首次启动应用，注册/登录",
+          "在第一天使用应用，浏览所有可用的锻炼功能",
+          "将系统时间调整到第二天（00:01）",
+          "再次打开应用查看付费限制"
+        ],
+        "expected_results": [
+          "第一天使用时，付费功能限制未展现，所有可用内容均可访问",
+          "第二天开始，付费墙/限制逐步展现，但至少有一套完整锻炼计划仍可免费完成"
+        ]
+      },
+      {
+        "test_case_id": "TC-010",
+        "title": "客服联系表单正常提交不被误判为垃圾信息",
+        "requirement_id": "REQ-004",
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14291852699",
+          "REV-AS-14276064361",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P1",
+        "test_type": "normal",
+        "preconditions": [],
+        "steps": [
+          "用户进入应用内的'帮助与支持'入口",
+          "找到并打开联系表单",
+          "填写问题描述（包含扣费争议相关关键词）",
+          "提交表单"
+        ],
+        "expected_results": [
+          "表单提交成功，系统返回提交成功确认和预计回复时间",
+          "提交未被系统误判为垃圾信息而拒绝"
+        ]
+      },
+      {
+        "test_case_id": "TC-011",
+        "title": "客服联系表单含垃圾信息特征时仍可提交",
+        "requirement_id": "REQ-004",
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14291852699",
+          "REV-AS-14276064361",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P1",
+        "test_type": "negative",
+        "preconditions": [],
+        "steps": [
+          "用户进入'帮助与支持'页面的联系表单",
+          "在问题描述字段输入包含重复字符和URL链接的文本",
+          "点击提交"
+        ],
+        "expected_results": [
+          "表单提交成功，系统返回提交成功确认",
+          "不再因'疑似垃圾信息'而拒绝提交"
+        ]
+      },
+      {
+        "test_case_id": "TC-012",
+        "title": "应用内帮助与支持页面包含必备FAQ内容",
+        "requirement_id": "REQ-004",
+        "source_review_ids": [
+          "REV-AS-14306466803",
+          "REV-AS-14291852699",
+          "REV-AS-14276064361",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P1",
+        "test_type": "boundary",
+        "preconditions": [],
+        "steps": [
+          "用户进入应用内'帮助与支持'页面",
+          "逐项核对页面中展示的FAQ分类和内容"
+        ],
+        "expected_results": [
+          "'帮助与支持'页面包含以下三类FAQ内容：扣费争议处理指引、订阅管理FAQ、账号问题FAQ"
+        ]
+      },
+      {
+        "test_case_id": "TC-013",
+        "title": "付费提示中价格单位明确无歧义",
+        "requirement_id": "REQ-005",
+        "source_review_ids": [
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P0",
+        "test_type": "normal",
+        "preconditions": [],
+        "steps": [
+          "用户进入任一付费节点页面",
+          "查看价格展示信息"
+        ],
+        "expected_results": [
+          "价格展示明确标注周期单位（如/月、/年、一次性），无歧义",
+          "例如显示'$39.99/月'而非仅有'$39.99'"
+        ]
+      },
+      {
+        "test_case_id": "TC-014",
+        "title": "试用确认页面展示首次扣费金额及日期",
+        "requirement_id": "REQ-005",
+        "source_review_ids": [
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P0",
+        "test_type": "negative",
+        "preconditions": [],
+        "steps": [
+          "用户点击'免费试用'进入订阅确认流程",
+          "在试用确认页面查看扣费说明",
+          "核对页面展示信息"
+        ],
+        "expected_results": [
+          "试用确认页面展示：试用期X天，试用结束后将于YYYY-MM-DD扣款$XX.XX",
+          "扣费金额与订阅方案（月/年）一致，无歧义"
+        ]
+      },
+      {
+        "test_case_id": "TC-015",
+        "title": "取消订阅流程展示权益有效期和续费终止说明",
+        "requirement_id": "REQ-005",
+        "source_review_ids": [
+          "REV-AS-14297707993",
+          "REV-AS-14222226181",
+          "REV-AS-14221168828",
+          "REV-AS-14212862587"
+        ],
+        "priority": "P0",
+        "test_type": "boundary",
+        "preconditions": [],
+        "steps": [
+          "用户进入应用内'订阅管理'",
+          "点击'取消订阅'按钮",
+          "在取消确认页面查看展示的信息",
+          "确认取消"
+        ],
+        "expected_results": [
+          "取消确认页面展示：取消后当前权益将持续到YYYY-MM-DD，届时不会续费",
+          "取消后订阅状态更新为'已取消'，且不再产生新的扣费"
+        ]
+      }
+    ],
+    "limitations": [
+      "批次 1：单条评论数据有限，部分评论内容简短，情绪判断基于有限文本。",
+      "批次 1：评论样本仅为该批次20条，不代表全部用户意见。",
+      "批次 1：未获取用户付费记录等后台数据，无法验证订阅争议的具体事实。",
+      "批次 2：评论REV-AS-14260733949内容过于简短('It\\'s ok')，无法提取更多具体信息",
+      "批次 2：评论REV-AS-14217181753中'希望不要再次发生'的表述较模糊，仅提取了可明确判断的部分",
+      "批次 3：评论样本量有限，未能覆盖所有用户群体；付费/免费政策的不满在低分评论中集中出现，高分评论用户未提及此问题。",
+      "本次聚合基于60条Atomic Insight，不涵盖所有可能的用户观点。Topic由动态归纳得出，未使用预设分类。各Topic的insight数量不等，不能代表用户群体比例。",
+      "批次聚合基于60条Atomic Insight，不涵盖所有可能的用户观点。",
+      "评论样本量有限，高分评论多为简短肯定，低分评论详细描述了付费和客服问题，可能存在沉默偏差。",
+      "未获取用户付费记录、后台日志等客观数据，无法验证订阅争议、扣费问题的具体事实。",
+      "部分评论内容简短（如'It's ok'），可提取信息有限。",
+      "Topic由动态归纳得出，未使用预设分类，各Topic的insight数量不等，不能代表用户群体实际比例。",
+      "评论样本量有限，仅为分析批次中的60条Atomic Insight，不涵盖所有用户群体观点",
+      "未获取用户付费记录、后台日志等客观数据，无法验证订阅争议、扣费问题的具体事实",
+      "高分评论多为简短肯定，低分评论详细描述了付费和客服问题，可能存在沉默偏差",
+      "部分评论内容简短（如'It's ok'），可提取信息有限",
+      "Topic由动态归纳得出，未使用预设分类，各Topic的insight数量不等，不能代表用户群体实际比例",
+      "未获取用户付费记录、后台日志等客观数据，无法验证订阅争议、扣费问题的具体事实",
+      "未指定具体测试设备（iOS/Android版本）、支付沙箱环境及测试账号信息",
+      "未提供客服联系表单的具体UI路径及反垃圾规则的技术细节",
+      "未指定免费版保留的具体锻炼计划名称或内容",
+      "未提供广告激励播放的具体SDK或接口信息",
+      "未提供网站URL或网站客服工单系统的技术实现细节",
+      "P0/P1的boundary场景依赖的时间边界（试用期最后一天、第二天）依赖设备时间模拟，未提供时间模拟工具说明"
+    ]
+  }
+}

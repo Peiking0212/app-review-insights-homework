@@ -40,6 +40,31 @@ class StreamlitAppTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(app.radio[1].value, "测试用例与追溯")
 
+    def test_real_demo_cache_restores_complete_results(self) -> None:
+        app = AppTest.from_file(PROJECT_DIR / "app.py").run(timeout=15)
+
+        app.radio[0].set_value("真实缓存 Demo").run(timeout=15)
+
+        self.assertEqual(len(app.exception), 0)
+        self.assertTrue(
+            any(
+                metric.label == "原始评论" and metric.value == "50"
+                for metric in app.metric
+            )
+        )
+        self.assertTrue(
+            any("缓存演示" in item.value for item in app.success)
+        )
+        self.assertTrue(
+            any(
+                "Finding Quality" in item.value
+                for item in app.subheader
+            )
+        )
+        self.assertTrue(
+            any("Test Quality" in item.value for item in app.subheader)
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
