@@ -117,9 +117,9 @@ def apply_test_quality_gate(
         for requirement in plan_result.requirements
     }
     errors: list[str] = []
-    scenarios_by_requirement: dict[str, set[str]] = {
-        requirement_id: set() for requirement_id in requirement_by_id
-    }
+    selected_candidates = []
+    selected_slots: set[tuple[str, str]] = set()
+    redundant_candidate_count = 0
     for candidate in draft.test_cases:
         requirement = requirement_by_id.get(candidate.requirement_id)
         if requirement is None:
@@ -128,14 +128,24 @@ def apply_test_quality_gate(
                 f"{candidate.requirement_id}"
             )
             continue
-        scenarios_by_requirement[candidate.requirement_id].add(
-            candidate.scenario_type
-        )
+        slot = (candidate.requirement_id, candidate.scenario_type)
+        if (
+            candidate.scenario_type not in _required_scenarios(requirement)
+            or slot in selected_slots
+        ):
+            redundant_candidate_count += 1
+            continue
+        selected_slots.add(slot)
+        selected_candidates.append(candidate)
 
     for requirement_id, requirement in requirement_by_id.items():
         missing = sorted(
             _required_scenarios(requirement)
-            - scenarios_by_requirement[requirement_id]
+            - {
+                scenario
+                for selected_requirement_id, scenario in selected_slots
+                if selected_requirement_id == requirement_id
+            }
         )
         if missing:
             errors.append(
@@ -166,11 +176,17 @@ def apply_test_quality_gate(
             steps=candidate.steps,
             expected_results=candidate.expected_results,
         )
-        for index, candidate in enumerate(draft.test_cases, start=1)
+        for index, candidate in enumerate(selected_candidates, start=1)
     ]
+    limitations = [*plan_result.limitations, *draft.limitations]
+    if redundant_candidate_count:
+        limitations.append(
+            f"Python 已移除 {redundant_candidate_count} 条重复或非必需测试候选；"
+            "每个 Requirement 的必需场景只保留一条。"
+        )
     return TestGenerationResult(
         test_cases=test_cases,
-        limitations=[*plan_result.limitations, *draft.limitations],
+        limitations=limitations,
     )
 
 

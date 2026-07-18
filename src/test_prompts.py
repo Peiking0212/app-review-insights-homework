@@ -33,6 +33,10 @@ def build_test_messages(
         ],
         "planning_limitations": plan_result.limitations,
     }
+    expected_test_case_count = sum(
+        3 if requirement.priority in {"P0", "P1"} else 1
+        for requirement in plan_result.requirements
+    )
     return [
         {
             "role": "system",
@@ -42,9 +46,9 @@ def build_test_messages(
                 "硬性规则：\n"
                 "1. requirement_id 只能引用输入中真实存在的 REQ-*；不要填写 Review ID、"
                 "优先级或最终 TC ID，它们由 Python 派生。\n"
-                "2. 每条 Requirement 至少生成一个 normal 场景。\n"
-                "3. 每条 P0/P1 Requirement 必须分别生成 normal、negative、boundary 三种场景；"
-                "不要用一条测试冒充三种覆盖。\n"
+                "2. 每条 P2/P3 Requirement 恰好生成 1 条 normal，不生成额外场景。\n"
+                "3. 每条 P0/P1 Requirement 恰好生成 3 条，分别且各仅一条 normal、"
+                "negative、boundary；不要重复同一个 Requirement/场景组合。\n"
                 "4. candidate_id 使用 TCC-001 起的唯一 ID；scenario_type 只能是 normal、"
                 "negative、boundary。\n"
                 "5. 步骤必须是可执行动作，预期结果必须是可观察结果；不要写“功能正常”"
@@ -59,7 +63,8 @@ def build_test_messages(
             "role": "user",
             "content": "请基于以下已校验 PRD 草拟测试用例：\n"
             + json.dumps(payload, ensure_ascii=False, indent=2)
-            + "\n\n输出前请检查：所有 Requirement 至少有 normal；所有 P0/P1 同时有"
-            + " normal、negative、boundary；没有未知 REQ ID。",
+            + f"\n\n本次必须恰好输出 {expected_test_case_count} 条测试用例。"
+            + "输出前请检查：所有 P2/P3 恰好一条 normal；所有 P0/P1 各有且仅有一条"
+            + " normal、negative、boundary；没有重复场景或未知 REQ ID。",
         },
     ]

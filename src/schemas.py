@@ -489,7 +489,9 @@ class TestCaseCandidate(StrictModel):
 class TestGenerationDraft(StrictModel):
     """模型生成的测试草稿，进入 UI 前必须通过确定性追溯质量门。"""
 
-    test_cases: list[TestCaseCandidate] = Field(min_length=1, max_length=30)
+    # 允许接收模型少量过度生成，再由 Python 按 Requirement/场景确定性收敛。
+    # 正式规划最多 6 条 Requirement，最终有效用例最多 18 条。
+    test_cases: list[TestCaseCandidate] = Field(min_length=1, max_length=60)
     limitations: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")

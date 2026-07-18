@@ -273,12 +273,13 @@ Evidence Finding 页面会显示四个由 Python 复算的质量指标，不额�
 ```text
 Requirement + Acceptance Criteria
 → 模型草拟 normal / negative / boundary 场景
-→ Python 校验 Requirement ID 与场景覆盖
+→ Python 按 Requirement / 场景组合移除冗余候选
+→ Python 校验 Requirement ID 与必需场景覆盖
 → Python 派生 TC ID、优先级和 Review ID
 → Review → Finding → Requirement → TestCase 质量门
 ```
 
-每条 Requirement 至少需要正常场景；P0/P1 必须同时覆盖正常、异常和边界场景。模型不能填写最终 `TC-*`、Review ID 或优先级。页面展示四个确定性指标：
+每条 P2/P3 Requirement 恰好需要一条正常场景；P0/P1 恰好需要正常、异常和边界各一条。Prompt 会根据当前 Requirement 数量给出精确用例总数。结构化草稿允许最多 60 条候选，用来接住模型偶发的有限过度生成；Python 随后只保留每个必需 `Requirement / scenario` 组合的第一条，并把移除数量写入限制。未知 Requirement 或缺少必需场景仍会阻断，不会通过删除来掩盖引用或覆盖错误。模型不能填写最终 `TC-*`、Review ID 或优先级。页面展示四个确定性指标：
 
 | 指标 | 确定性定义 |
 |---|---|

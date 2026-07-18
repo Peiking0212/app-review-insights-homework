@@ -142,6 +142,30 @@ class TestGenerationTests(unittest.TestCase):
 
         self.assertEqual(len(result.test_cases), 1)
 
+    def test_quality_gate_collapses_31_candidates_to_required_scenarios(self) -> None:
+        base_cases = self.valid_draft().test_cases
+        draft = TestGenerationDraft(
+            test_cases=[
+                base_cases[index % len(base_cases)].model_copy(
+                    update={"candidate_id": f"TCC-{index + 1:03d}"}
+                )
+                for index in range(31)
+            ]
+        )
+
+        result = apply_test_quality_gate(
+            draft, self.plan_result, self.valid_ids()
+        )
+
+        self.assertEqual(len(result.test_cases), 3)
+        self.assertEqual(
+            {test_case.test_type for test_case in result.test_cases},
+            {"normal", "negative", "boundary"},
+        )
+        self.assertTrue(
+            any("移除 28 条" in limitation for limitation in result.limitations)
+        )
+
     def test_upstream_requirement_reviews_must_match_finding(self) -> None:
         plan = self.plan_result.model_copy(deep=True)
         plan.requirements[0].source_review_ids = ["REV-001"]
@@ -201,6 +225,7 @@ class TestGenerationTests(unittest.TestCase):
         self.assertIn("不要填写 Review ID", messages[0]["content"])
         self.assertIn("REQ-001", messages[1]["content"])
         self.assertIn("关注订阅透明度", messages[1]["content"])
+        self.assertIn("恰好输出 3 条测试用例", messages[1]["content"])
 
 
 if __name__ == "__main__":
