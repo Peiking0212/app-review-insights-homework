@@ -1,6 +1,6 @@
 # ReviewScope AI
 
-这是 App Review Insights Homework 的第一个可运行版本。
+这是 App Review Insights Homework 的阶段 2 可运行版本。
 
 当前版本已经可以：
 
@@ -9,9 +9,11 @@
 - 检查必要字段；
 - 删除空评论、异常评分和重复评论；
 - 展示每条清洗规则、移除数量、保留率和规则原因；
-- 展示数据统计、评分分布和评论表格。
+- 展示数据统计、评分分布和评论表格；
+- 使用 AI 提取 Atomic Insight，并根据当前评论动态聚合 Topic；
+- 支持 OTHER / 无法判断，使用 Python 拦截不存在、重复或遗漏的引用。
 
-当前版本还没有接入 AI，也不会生成 PRD。后续会在这个基础上逐步增加动态主题、用户问题、产品需求、测试用例和追溯检查。
+当前版本不会生成 Finding 或 PRD。后续会在已经通过校验的 Topic 基础上增加用户问题、产品需求、测试用例和完整追溯检查。
 
 项目采用“参考案例驱动、确定性验证”的迭代方式。每个阶段开始前只查看对应案例，记录借鉴与不借鉴内容，再进行实现和测试。完整路线见 [项目参考与借鉴手册](REFERENCE_PLAYBOOK.md)。
 
@@ -57,6 +59,21 @@ py -m venv .venv
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
+
+复制模型配置模板：
+
+```powershell
+Copy-Item .env.example .env
+```
+
+使用文本编辑器打开 `.env`，至少填写：
+
+```text
+OPENAI_API_KEY=你的模型密钥
+OPENAI_MODEL=你实际可用的模型名称
+```
+
+使用 OpenAI 官方接口时 `OPENAI_BASE_URL` 可以留空；使用兼容接口时，填写服务商提供的 `/v1` 地址。`.env` 已被 Git 忽略，不能把真实密钥提交到 GitHub。
 
 启动网站：
 
@@ -112,7 +129,23 @@ Review → Topic → Finding → Requirement → TestCase
 - `Requirement` 必须引用 Finding 和 Review，且包含范围与验收标准；
 - `TestCase` 必须引用 Requirement 和 Review。
 
-模型会拒绝缺少证据、ID 前缀错误、引用重复以及同一评论同时作为支持与冲突证据等结构问题。真实 ID 是否存在于本次数据集中，将在后续确定性追溯校验阶段检查。
+模型会拒绝缺少证据、ID 前缀错误、引用重复以及同一评论同时作为支持与冲突证据等结构问题。动态主题阶段还会用 Python 检查引用是否真实存在于本次数据集。
+
+## 动态主题发现
+
+阶段 2 的流程是：
+
+```text
+清洗后 Review
+→ AI 提取单一方面、单一主要情绪的 Atomic Insight
+→ AI 根据本次 Insight 动态聚合 Topic
+→ Python 校验 Review / Insight 引用
+→ UI 展示主题、原子观点、代表评论和限制
+```
+
+提示词明确禁止预设健身、订阅、广告等行业分类。每条 Insight 必须归入且只归入一个 Topic；无法提供有效产品体验信息的评论进入 `OTHER`。如果 API、网络、结构化输出或引用校验失败，本阶段会停止，不会继续生成没有证据的 Finding 或 PRD。
+
+内置数据只能验证这条流程。由于本地没有保存真实 API Key，本次提交完成了代码、失败路径和客户端兼容性测试，但仍需使用自己的 Key 和至少两组不同评论做一次真实模型验收。
 
 ## 入口文件
 

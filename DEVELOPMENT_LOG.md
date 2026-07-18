@@ -73,15 +73,17 @@ UTF-8 source read: passed
 
 ### 阶段 2：动态主题发现
 
-- 状态：待开始
+- 状态：代码完成，待真实模型验收
 - 阶段参考：Apple Review Summarization Pipeline、Instructor + Pydantic、所选 LLM 官方文档。
 - 任务：
-  - [ ] 添加 `.env.example` 和模型客户端。
-  - [ ] 使用结构化输出生成动态 Topic。
-  - [ ] 禁止写死健身 App 分类。
-  - [ ] 支持 OTHER/无法判断。
-  - [ ] 模型失败时显示错误，不生成下游结果。
+  - [x] 添加 `.env.example` 和模型客户端。
+  - [x] 使用结构化输出生成动态 Topic。
+  - [x] 禁止写死健身 App 分类。
+  - [x] 支持 OTHER/无法判断。
+  - [x] 模型失败时显示错误，不生成下游结果。
 - 验收：更换评论数据后主题发生合理变化，结构校验通过。
+- 已验证：22 个自动测试、Python 3.9 Instructor 客户端创建、未配置 Key 的 UI 失败停止路径。
+- 待验证：使用真实 Key 分别运行两组不同评论，确认主题随数据合理变化。
 - 建议 commit：`feat: add model-driven dynamic topic discovery`
 
 ### 阶段 3：Evidence Finding
@@ -162,19 +164,9 @@ UTF-8 source read: passed
 
 ## 5. 当前唯一下一任务
 
-> 完成阶段 2：实现基于当前评论动态生成 Topic 的第一版，不接 App Store 实时采集，不生成 PRD。
+> 完成阶段 2 的真实模型验收：在本地 `.env` 配置自己的 API Key，分别运行内置数据和一份不同领域 CSV，确认 Topic 随数据变化且所有引用通过校验。
 
-阶段开始前查看：Apple Review Summarization Pipeline、Instructor + Pydantic、所选 LLM 的结构化输出说明。重点记录原子 Insight、动态 Topic、结构化输出和失败停止；不借鉴模型训练、多 Agent 或复杂云架构。
-
-建议交给 AI 的提示：
-
-```text
-请先阅读 AGENTS.md、AI_USAGE.md 和 DEVELOPMENT_LOG.md。
-完成阶段 2：添加 OpenAI-compatible 模型客户端和动态主题发现。
-主题必须根据当前评论产生，不能写死健身 App 分类；输出使用 Topic Schema，支持 OTHER，模型失败时停止下游流程。
-保持现有 Streamlit 页面可以运行，不做 App Store 实时采集，不生成 Finding 或 PRD。
-完成后运行全部测试，更新 DEVELOPMENT_LOG.md，并在检查 diff 后创建一个 Git commit；不要推送。
-```
+验收前不进入 Finding/PRD。不得把 `.env`、Key 或未经真实运行产生的缓存结果提交到 GitHub。
 
 ## 6. 每日开发记录
 
@@ -231,6 +223,22 @@ UTF-8 source read: passed
 - 尚未完成：阶段 2 动态主题及后续完整闭环。
 - 关联 commit：本次参考手册提交。
 - 下一步：阶段 2 动态主题发现；开始前查看 Apple Pipeline、Instructor/Pydantic 和所选 LLM 文档。
+
+### 2026-07-18 / 阶段 2 动态主题发现
+
+- 完成：添加 OpenAI-compatible + Instructor 模型客户端、Atomic Insight、动态 Topic、OTHER、确定性引用校验和 Streamlit 展示。
+- 修改文件：`.env.example`、`app.py`、`src/config.py`、`src/prompts.py`、`src/schemas.py`、`src/topic_discovery.py`、测试与项目文档。
+- 测试命令与结果：`python -m unittest discover -s tests -v`，22 个测试通过；入口与新增模块语法检查通过；未配置 Key 时点击分析会明确停止。
+- 遇到的问题：普通沙箱网络安装两次超时；允许联网后安装成功。Python 3.9 加载 Instructor 1.15.4 时缺少类型标注回退支持，增加 `eval-type-backport` 后客户端创建测试通过。
+- AI 建议中的错误或风险：只验证 Schema 不等于真实客户端可运行；自动测试最初没有触发 Instructor 的延迟导入，后来补充了真实客户端创建测试。
+- 我的取舍：由 AI 负责语义提取和动态聚合；由 Python 负责内部 ID、引用存在性、唯一归类、遗漏检查和失败阻断。
+- 当前可以演示：模型配置状态、动态主题按钮、Atomic Insight、Topic 代表评论、OTHER、限制和清晰错误路径。
+- 尚未完成：真实 Key 的跨数据集主题变化验收、Evidence Finding、PRD、测试用例、App Store 采集和真实缓存。
+- 关联 commit：本次阶段 2 动态主题发现提交。
+- 下一步：用自己的 Key 对两组不同数据做真实模型验收；通过后再进入阶段 3。
+- 查看资料：Apple Review Summarization Pipeline、Instructor GitHub、Pydantic Schema 和 OpenAI 官方模型/结构化输出说明。
+- 实际借鉴：原子 Insight、无固定 taxonomy、Pydantic 结构化输出、有限重试和错误停止。
+- 明确不借鉴及原因：不采用 Apple 的模型微调、Embedding 去重、多模型训练和复杂云架构；这些超出本阶段 P0、截止时间和本地演示需要。
 
 ## 7. 每次收工填写模板
 

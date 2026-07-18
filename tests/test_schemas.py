@@ -35,6 +35,7 @@ class TraceableSchemaTests(unittest.TestCase):
             topic_id="TOPIC-001",
             name="Renewal communication",
             description="Feedback about renewal information.",
+            insight_ids=["INSIGHT-001"],
             representative_review_ids=[review.review_id],
         )
         finding = Finding(
@@ -124,6 +125,7 @@ class TraceableSchemaTests(unittest.TestCase):
                 topic_id="TOPIC-001",
                 name="Invalid reference",
                 description="Uses a finding ID as a review ID.",
+                insight_ids=["INSIGHT-001"],
                 representative_review_ids=["FIND-001"],
             )
 

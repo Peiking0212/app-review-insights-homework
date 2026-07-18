@@ -167,6 +167,18 @@ AI 不得直接决定或伪造：
 - 测试结果：文档链接、UTF-8 和现有 14 个自动测试通过后提交。
 - 关联 commit：本次参考手册提交。
 
+### 2026-07-18 / 阶段 2 动态主题发现
+
+- 使用工具或模型：Codex；开发参考 Apple Review Summarization Pipeline、Instructor + Pydantic 和 OpenAI 官方模型文档。
+- 我的目标：让系统根据当前评论提取原子观点并动态生成主题，不依赖写死行业分类。
+- 提供给 AI 的关键信息：清洗后的 Review、用户分析目标、Topic Schema、OTHER 和失败停止要求。
+- AI 生成或建议了什么：OpenAI-compatible 配置、Instructor 结构化输出、AtomicInsight / TopicDiscoveryResult、引用校验和 Streamlit 主题页。
+- 我发现的问题：最初自动测试没有真正加载 Instructor；在 Python 3.9 下，当前 Instructor 还需要 `eval-type-backport` 才能创建客户端。
+- 我如何验证：增加客户端创建、Prompt、内部 ID、非法 Review ID、评论遗漏和有效结果测试；手动点击未配置 Key 的分析按钮验证安全停止。
+- 我做出的修改或取舍：借鉴 Apple 的 Atomic Insight 和无固定 taxonomy；当前轻量版在一次结构化调用中完成提取与聚合，不借鉴其微调模型、Embedding、模型训练和多模块云架构。
+- 测试结果：22 个自动测试通过；入口及新增模块语法检查通过；缺少配置时 UI 清楚报错且不生成下游结果。
+- 关联 commit：本次阶段 2 动态主题发现提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：

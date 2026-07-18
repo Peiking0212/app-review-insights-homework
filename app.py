@@ -6,12 +6,21 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from pydantic import ValidationError
 
 from src.cleaning import CleaningReport, clean_review_records
+from src.config import ModelConfigError, model_configured
+from src.schemas import TopicDiscoveryResult
+from src.topic_discovery import (
+    TopicDiscoveryError,
+    TopicDiscoveryService,
+    prepare_reviews,
+)
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -64,7 +73,7 @@ def render_sidebar() -> tuple[pd.DataFrame, str]:
     goal = st.sidebar.text_area(
         "分析目标",
         value="了解用户最主要的不满，并找出优先改进方向",
-        help="第一版先保存这个目标，后续版本会将它发送给 AI。",
+        help="动态主题会结合这个目标，但不会使用写死的行业分类。",
     )
 
     if source == "上传 CSV / JSON":
@@ -78,6 +87,70 @@ def render_sidebar() -> tuple[pd.DataFrame, str]:
         return load_uploaded_reviews(uploaded_file), goal
 
     return load_sample_reviews(), goal
+
+
+def analysis_fingerprint(records: list[dict], goal: str) -> str:
+    """标识当前输入，避免切换数据后误显示旧主题。"""
+    serialized = json.dumps(
+        {"reviews": records, "goal": goal},
+        ensure_ascii=False,
+        sort_keys=True,
+        default=str,
+    )
+    return sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def render_topic_result(
+    result: TopicDiscoveryResult, review_records: list[dict]
+) -> None:
+    """展示模型输出以及能够下钻查看的原始评论证据。"""
+    review_by_id = {record["review_id"]: record for record in review_records}
+    topic_column, insight_column, other_column = st.columns(3)
+    topic_column.metric("动态主题", len(result.topics))
+    insight_column.metric("原子观点", len(result.insights))
+    other_column.metric("OTHER / 无法判断", len(result.other_review_ids))
+
+    st.subheader("动态主题")
+    if not result.topics:
+        st.info("当前评论没有形成可用主题；请查看 OTHER 和数据限制。")
+    for topic in result.topics:
+        with st.expander(f"{topic.topic_id} · {topic.name}", expanded=True):
+            st.write(topic.description)
+            st.caption(
+                f"包含 {len(topic.insight_ids)} 条原子观点；"
+                f"代表评论：{', '.join(topic.representative_review_ids)}"
+            )
+            for review_id in topic.representative_review_ids:
+                review = review_by_id[review_id]
+                st.markdown(
+                    f"> **{review_id} · {review['rating']} 星**  "
+                    f"\n> {review['content']}"
+                )
+
+    st.subheader("Atomic Insights（原子观点）")
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {
+                    "Insight ID": insight.insight_id,
+                    "Review ID": insight.review_id,
+                    "情绪": insight.sentiment,
+                    "原子观点": insight.statement,
+                }
+                for insight in result.insights
+            ]
+        ),
+        width="stretch",
+        hide_index=True,
+    )
+
+    if result.other_review_ids:
+        st.subheader("OTHER / 无法判断")
+        st.write("、".join(result.other_review_ids))
+    if result.limitations:
+        st.subheader("数据限制")
+        for limitation in result.limitations:
+            st.warning(limitation)
 
 
 def main() -> None:
@@ -105,6 +178,23 @@ def main() -> None:
 
     cleaned_reviews, cleaning_report = normalize_reviews(raw_reviews)
 
+    try:
+        prepared_reviews = prepare_reviews(
+            cleaned_reviews.to_dict(orient="records")
+        )
+    except ValidationError as error:
+        st.error(f"评论无法进入 AI 分析阶段：{error}")
+        st.stop()
+    prepared_records = [
+        review.model_dump(mode="json") for review in prepared_reviews
+    ]
+    current_fingerprint = analysis_fingerprint(prepared_records, analysis_goal)
+
+    if model_configured():
+        st.sidebar.success("模型配置：已就绪")
+    else:
+        st.sidebar.warning("模型配置：未完成（参照 .env.example）")
+
     st.subheader("本次目标")
     st.info(analysis_goal)
 
@@ -118,8 +208,8 @@ def main() -> None:
         f"{average_rating:.1f}" if pd.notna(average_rating) else "暂无",
     )
 
-    overview_tab, cleaning_tab, reviews_tab, workflow_tab = st.tabs(
-        ["数据概览", "清洗过程", "评论数据", "工作流程"]
+    overview_tab, cleaning_tab, reviews_tab, topics_tab, workflow_tab = st.tabs(
+        ["数据概览", "清洗过程", "评论数据", "动态主题", "工作流程"]
     )
 
     with overview_tab:
@@ -180,10 +270,48 @@ def main() -> None:
             if column in cleaned_reviews.columns
         ]
         st.dataframe(
-            cleaned_reviews[preferred_columns],
+            pd.DataFrame(prepared_records)[preferred_columns],
             width="stretch",
             hide_index=True,
         )
+
+    with topics_tab:
+        st.subheader("阶段 2：动态主题发现")
+        st.markdown(
+            "AI 会先从每条评论提取单一观点，再根据本次数据聚合主题。"
+            "主题不是预设分类；Python 会校验所有 Review / Insight 引用。"
+        )
+        if any(review.source == "illustrative_sample" for review in prepared_reviews):
+            st.warning(
+                "当前包含内置演示评论。这里的 AI 结果只能验证流程，"
+                "不能作为最终 Homework 的真实用户结论。"
+            )
+
+        if st.button("开始动态主题分析", type="primary"):
+            st.session_state.pop("topic_result", None)
+            st.session_state.pop("topic_fingerprint", None)
+            try:
+                with st.spinner("正在提取 Atomic Insight 并聚合动态主题……"):
+                    result = TopicDiscoveryService().discover(
+                        prepared_reviews, analysis_goal
+                    )
+            except (ModelConfigError, TopicDiscoveryError) as error:
+                st.error(str(error))
+                st.info("主题阶段已停止，不会生成 Finding、PRD 或测试用例。")
+            else:
+                st.session_state["topic_result"] = result.model_dump(mode="json")
+                st.session_state["topic_fingerprint"] = current_fingerprint
+                st.success("动态主题发现完成，引用校验通过。")
+
+        saved_result = st.session_state.get("topic_result")
+        saved_fingerprint = st.session_state.get("topic_fingerprint")
+        if saved_result and saved_fingerprint == current_fingerprint:
+            render_topic_result(
+                TopicDiscoveryResult.model_validate(saved_result),
+                prepared_records,
+            )
+        elif saved_result:
+            st.info("输入数据或分析目标已改变，请重新运行动态主题发现。")
 
     with workflow_tab:
         st.subheader("当前完成情况")
@@ -192,12 +320,12 @@ def main() -> None:
         st.success(
             "✅ 3. 过滤无效评分、空评论和重复评论，生成清洗审计报告"
         )
-        st.info("⏳ 4. AI 动态主题发现（下一阶段）")
+        st.success("✅ 4. AI 动态主题发现、OTHER 与引用校验")
         st.info("⏳ 5. 生成问题、PRD 和测试用例（后续阶段）")
 
     st.divider()
     st.caption(
-        "这是第一个可运行版本：它只负责读取、清洗和展示评论，暂未调用 AI。"
+        "当前版本已支持模型驱动的动态主题；Finding、PRD 和测试用例仍未生成。"
     )
 
 

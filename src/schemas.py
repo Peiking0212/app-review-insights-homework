@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -47,12 +47,51 @@ class Topic(StrictModel):
     topic_id: str = Field(pattern=r"^TOPIC-[A-Za-z0-9_-]+$")
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
+    insight_ids: list[str] = Field(min_length=1)
     representative_review_ids: list[str] = Field(min_length=1)
+
+    @field_validator("insight_ids")
+    @classmethod
+    def validate_insight_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "INSIGHT-")
 
     @field_validator("representative_review_ids")
     @classmethod
     def validate_review_ids(cls, values: list[str]) -> list[str]:
         return _validate_id_list(values, "REV-")
+
+
+class AtomicInsight(StrictModel):
+    """从一条评论中提取的单一方面、单一情绪的原子观点。"""
+
+    insight_id: str = Field(pattern=r"^INSIGHT-[A-Za-z0-9_-]+$")
+    review_id: str = Field(pattern=r"^REV-[A-Za-z0-9_-]+$")
+    statement: str = Field(min_length=1)
+    sentiment: Literal["positive", "negative", "neutral", "mixed"]
+
+
+class TopicDiscoveryResult(StrictModel):
+    """动态主题阶段的完整结构化输出。"""
+
+    insights: list[AtomicInsight] = Field(default_factory=list)
+    topics: list[Topic] = Field(default_factory=list)
+    other_review_ids: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+    @field_validator("other_review_ids")
+    @classmethod
+    def validate_other_review_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "REV-")
+
+    @model_validator(mode="after")
+    def ids_must_be_unique(self) -> "TopicDiscoveryResult":
+        insight_ids = [insight.insight_id for insight in self.insights]
+        topic_ids = [topic.topic_id for topic in self.topics]
+        if len(insight_ids) != len(set(insight_ids)):
+            raise ValueError("Atomic Insight ID 不得重复")
+        if len(topic_ids) != len(set(topic_ids)):
+            raise ValueError("Topic ID 不得重复")
+        return self
 
 
 class Finding(StrictModel):
