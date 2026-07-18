@@ -6,7 +6,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from src.config import ModelConfig
-from src.finding_prompts import build_finding_messages
+from src.finding_prompts import (
+    build_finding_messages,
+    build_finding_repair_messages,
+)
 from src.schemas import (
     AtomicInsight,
     DiscoveryItem,
@@ -29,6 +32,16 @@ MIN_FINDING_SUPPORT = 2
 
 class FindingGenerationError(RuntimeError):
     """Finding 无法在证据约束下安全生成。"""
+
+
+class IncompleteFindingCoverageError(FindingGenerationError):
+    """Finding 草稿只有 Topic 遗漏，可进入一次有限补分析。"""
+
+    def __init__(self, missing_topic_ids: Sequence[str]) -> None:
+        self.missing_topic_ids = list(missing_topic_ids)
+        super().__init__(
+            "以下 Topic 未被分析：" + ", ".join(self.missing_topic_ids)
+        )
 
 
 @dataclass(frozen=True)
@@ -280,6 +293,8 @@ def apply_finding_quality_gate(
 
     uncovered_topics = sorted(valid_topic_ids - covered_topic_ids)
     if uncovered_topics:
+        if not errors:
+            raise IncompleteFindingCoverageError(uncovered_topics)
         errors.append("以下 Topic 未被分析：" + ", ".join(uncovered_topics))
     if errors:
         raise FindingGenerationError("；".join(errors))
@@ -373,6 +388,79 @@ def apply_finding_quality_gate(
     )
 
 
+def merge_finding_repair(
+    original: FindingDraft,
+    repair: FindingDraft,
+    topic_result: TopicDiscoveryResult,
+    missing_topic_ids: Sequence[str],
+) -> FindingDraft:
+    """只合并遗漏 Topic 的一次补分析，并拒绝越界 Insight。"""
+    missing_topic_id_set = set(missing_topic_ids)
+    insight_to_topic = {
+        insight_id: topic.topic_id
+        for topic in topic_result.topics
+        for insight_id in topic.insight_ids
+    }
+    allowed_insight_ids = {
+        insight_id
+        for insight_id, topic_id in insight_to_topic.items()
+        if topic_id in missing_topic_id_set
+    }
+    cited_insight_ids = {
+        insight_id
+        for candidate in repair.candidates
+        for insight_id in [
+            *candidate.supporting_insight_ids,
+            *candidate.conflicting_insight_ids,
+        ]
+    } | {
+        insight_id
+        for discovery in repair.discovery_candidates
+        for insight_id in discovery.insight_ids
+    }
+    invalid_insight_ids = sorted(cited_insight_ids - allowed_insight_ids)
+    covered_topic_ids = {
+        insight_to_topic[insight_id]
+        for insight_id in cited_insight_ids
+        if insight_id in insight_to_topic
+    }
+    still_missing_topic_ids = sorted(
+        missing_topic_id_set - covered_topic_ids
+    )
+    errors: list[str] = []
+    if invalid_insight_ids:
+        errors.append(
+            "Finding 补分析引用了非遗漏 Topic 的 Insight："
+            + ", ".join(invalid_insight_ids)
+        )
+    if still_missing_topic_ids:
+        errors.append(
+            "Finding 补分析后仍有 Topic 未被分析："
+            + ", ".join(still_missing_topic_ids)
+        )
+    if errors:
+        raise FindingGenerationError("；".join(errors))
+
+    normalized_repair_candidates = [
+        candidate.model_copy(
+            update={"candidate_id": f"CAND-REPAIR-{index:03d}"}
+        )
+        for index, candidate in enumerate(repair.candidates, start=1)
+    ]
+    return FindingDraft(
+        candidates=[*original.candidates, *normalized_repair_candidates],
+        discovery_candidates=[
+            *original.discovery_candidates,
+            *repair.discovery_candidates,
+        ],
+        limitations=[
+            *original.limitations,
+            f"Finding 有限补分析覆盖了 {len(missing_topic_id_set)} 个遗漏 Topic。",
+            *repair.limitations,
+        ],
+    )
+
+
 class FindingAnalysisService:
     """通过模型草拟 Finding，再由 Python 质量门生成最终结果。"""
 
@@ -419,6 +507,38 @@ class FindingAnalysisService:
                 "模型调用或 Finding 结构化输出失败，本阶段已停止。"
                 f"服务商返回：{safe_provider_error(error, self.config.api_key)}"
             ) from error
-        return apply_finding_quality_gate(
-            draft, topic_result, valid_review_ids
-        )
+        try:
+            return apply_finding_quality_gate(
+                draft, topic_result, valid_review_ids
+            )
+        except IncompleteFindingCoverageError as incomplete_error:
+            try:
+                repair = client.chat.completions.create(
+                    model=self.config.model,
+                    response_model=FindingDraft,
+                    messages=build_finding_repair_messages(
+                        reviews,
+                        topic_result,
+                        incomplete_error.missing_topic_ids,
+                        analysis_goal,
+                    ),
+                    max_retries=1,
+                    **build_model_request_options(self.config),
+                )
+                repaired_draft = merge_finding_repair(
+                    draft,
+                    repair,
+                    topic_result,
+                    incomplete_error.missing_topic_ids,
+                )
+                return apply_finding_quality_gate(
+                    repaired_draft, topic_result, valid_review_ids
+                )
+            except FindingGenerationError:
+                raise
+            except Exception as error:
+                raise FindingGenerationError(
+                    "遗漏 Topic 有限补分析的模型调用或结构化输出失败，"
+                    "Finding 阶段已停止。"
+                    f"服务商返回：{safe_provider_error(error, self.config.api_key)}"
+                ) from error

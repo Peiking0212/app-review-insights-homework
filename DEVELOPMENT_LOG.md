@@ -425,6 +425,17 @@ UTF-8 source read: passed
 - 当前可以演示：同类 31 条返回不会导致阶段失败，页面只展示覆盖完整且去重后的正式测试用例。
 - 下一步：用截图对应的 100 条评论任务重新运行阶段 5，核对限制说明和追溯指标。
 
+### 2026-07-18 / Finding 遗漏 Topic 有限补分析
+
+- 完成：当 Finding 草稿的唯一问题是遗漏 Topic 时，只发送遗漏 Topic、其 Insight 与来源 Review 进行一次补分析；合并后重新执行完整质量门。
+- 修改文件：`src/finding_prompts.py`、`src/finding_analysis.py`、`tests/test_finding_analysis.py`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：Finding 专项 16 个测试通过；完整回归见本次提交验证记录。
+- 遇到的问题：100 条真实评论已通过 Topic 阶段，但 Finding 首轮遗漏 `TOPIC-009`、`TOPIC-013`，旧质量门只能停止，不能最小修复。
+- AI 建议中的错误或风险：重新生成全部 Finding 可能改变正确证据分配；自动把遗漏 Topic 强行变成正式 Finding 会夸大弱证据。
+- 我的取舍：补分析仍允许输出 Discovery；只引用遗漏 Topic 的 Insight；纯遗漏最多补一次，任何越界引用或二次遗漏继续停止。
+- 当前可以演示：Finding 首轮遗漏少量 Topic 时最小补分析后继续；页面限制中记录补分析覆盖数量。
+- 下一步：使用截图对应的 100 条评论再次生成 Evidence Finding，确认 `TOPIC-009`、`TOPIC-013` 被覆盖并通过 Groundedness Gate。
+
 ## 7. 每次收工填写模板
 
 ```markdown

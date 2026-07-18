@@ -216,6 +216,7 @@ UI 会同时展示 Atomic Insight 数量和涉及的去重 Review 数量。后�
 ```text
 Review → Atomic Insight → Topic
 → 模型草拟 Finding Candidate / Discovery Candidate
+→ 若唯一问题是遗漏 Topic，只对遗漏 Topic 执行一次有限补分析
 → Python 从 Insight 推导 Review 与 Topic
 → 校验支持与冲突证据
 → Python 计算支持数量和置信度
@@ -231,6 +232,8 @@ Review → Atomic Insight → Topic
 - 同一 Review 不能同时作为同一个 Finding 的支持和冲突证据；
 - 少于 2 条去重支持评论的候选进入 Discovery；
 - 置信度根据支持数、冲突数和 Topic 覆盖计算，不接受模型估算。
+
+如果首轮草稿的唯一错误是遗漏 Topic，Python 只把遗漏 Topic 及其 Insight、来源 Review 交给模型补分析，并要求每个 Topic 进入 Finding Candidate 或 Discovery Candidate。补分析不能引用已覆盖 Topic 的 Insight，最多执行一次；伪造 Insight、情绪证据错误、重复引用或补分析后仍有遗漏都会继续阻断。
 
 `MIN_FINDING_SUPPORT = 2` 是当前小样本演示的保守门槛，不代表统计显著性。最终使用大规模美国区评论时应根据样本量重新校准。
 

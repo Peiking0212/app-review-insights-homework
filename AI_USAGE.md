@@ -250,6 +250,18 @@ AI 不得直接决定或伪造：
 - 测试结果：50 个自动测试通过；真实链路生成 1 个 Finding、3 个 Discovery，Evidence Coverage 100%、Review Traceability 100%、Unsupported Claims 0，质量门通过。
 - 关联 commit：本次 Finding 重复 Insight 修复提交。
 
+### 2026-07-18 / Finding 遗漏 Topic 有限补分析
+
+- 使用工具或模型：Codex 辅助诊断与实现；Instructor、Pydantic、Python Validator；运行时使用当前结构化输出模型。
+- 我的目标：修复 100 条评论生成 Finding 时遗漏 `TOPIC-009`、`TOPIC-013`，同时不放宽证据质量门。
+- 提供给 AI 的关键信息：仅包含 Python 确认遗漏的 Topic、这些 Topic 的 Insight 和对应 Review 原文。
+- AI 生成或建议了什么：为遗漏 Topic 补充 Finding Candidate 或 Discovery Candidate。
+- 我发现的问题：全量 Finding 请求即使结构合法，仍可能静默遗漏少量 Topic；完全重跑会改变已经正确的证据分配。
+- 我如何验证：检查补分析输入不包含已覆盖 Topic；覆盖合并成功、越界 Insight 拒绝、服务只补调用一次和完整回归。
+- 我做出的修改或取舍：只有错误集合为纯 Topic 遗漏时修复；补结果最多一次，合并后重新执行支持情绪、引用唯一性和完整覆盖质量门。
+- 测试结果：Finding 专项 16 个测试通过；完整回归见本次提交验证记录。
+- 关联 commit：本次 Finding 遗漏 Topic 有限补分析提交。
+
 ### 2026-07-18 / 阶段 5 测试用例与完整追溯检查
 
 - 使用工具或模型：Codex 辅助实现；DeepSeek V4 Flash 真实结构化调用；Python Validator。

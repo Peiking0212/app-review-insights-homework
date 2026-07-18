@@ -1,14 +1,24 @@
 import unittest
+from unittest.mock import MagicMock, patch
 
 from pydantic import ValidationError
 
 from src.finding_analysis import (
     FindingGenerationError,
+    FindingAnalysisService,
+    IncompleteFindingCoverageError,
     apply_finding_quality_gate,
     calculate_confidence,
     calculate_finding_quality,
+    merge_finding_repair,
 )
-from src.finding_prompts import FINDING_SYSTEM_PROMPT, build_finding_messages
+from src.config import ModelConfig
+from src.finding_prompts import (
+    FINDING_REPAIR_SYSTEM_PROMPT,
+    FINDING_SYSTEM_PROMPT,
+    build_finding_messages,
+    build_finding_repair_messages,
+)
 from src.schemas import (
     AtomicInsight,
     DiscoveryCandidate,
@@ -143,8 +153,62 @@ class FindingAnalysisTests(unittest.TestCase):
         draft = self.valid_draft()
         draft.candidates = [draft.candidates[0]]
 
-        with self.assertRaisesRegex(FindingGenerationError, "未被分析"):
+        with self.assertRaisesRegex(IncompleteFindingCoverageError, "未被分析"):
             apply_finding_quality_gate(draft, self.topic_result, self.valid_ids())
+
+    def test_repair_prompt_only_contains_missing_topic_evidence(self) -> None:
+        messages = build_finding_repair_messages(
+            self.reviews, self.topic_result, ["TOPIC-002"], "关注稳定性"
+        )
+
+        self.assertIn("只分析 missing_topics", FINDING_REPAIR_SYSTEM_PROMPT)
+        self.assertIn("TOPIC-002", messages[1]["content"])
+        self.assertIn("INSIGHT-004", messages[1]["content"])
+        self.assertIn("REV-004", messages[1]["content"])
+        self.assertNotIn("TOPIC-001", messages[1]["content"])
+        self.assertNotIn("INSIGHT-001", messages[1]["content"])
+
+    def test_python_merges_missing_topic_repair(self) -> None:
+        original = FindingDraft(candidates=[self.valid_draft().candidates[0]])
+        repair = FindingDraft(
+            discovery_candidates=[
+                DiscoveryCandidate(
+                    title="搜索完整性待验证",
+                    reason="当前只有一条 mixed 评论。",
+                    insight_ids=["INSIGHT-004"],
+                )
+            ]
+        )
+
+        merged = merge_finding_repair(
+            original, repair, self.topic_result, ["TOPIC-002"]
+        )
+        result = apply_finding_quality_gate(
+            merged, self.topic_result, self.valid_ids()
+        )
+
+        self.assertEqual(len(result.findings), 1)
+        self.assertEqual(result.discovery_items[0].source_topic_ids, ["TOPIC-002"])
+        self.assertTrue(
+            any("有限补分析覆盖了 1 个" in item for item in result.limitations)
+        )
+
+    def test_repair_rejects_insight_from_already_covered_topic(self) -> None:
+        original = FindingDraft(candidates=[self.valid_draft().candidates[0]])
+        repair = FindingDraft(
+            discovery_candidates=[
+                DiscoveryCandidate(
+                    title="错误重复分析",
+                    reason="错误引用已覆盖主题。",
+                    insight_ids=["INSIGHT-001"],
+                )
+            ]
+        )
+
+        with self.assertRaisesRegex(FindingGenerationError, "非遗漏 Topic"):
+            merge_finding_repair(
+                original, repair, self.topic_result, ["TOPIC-002"]
+            )
 
     def test_explicit_discovery_candidate_covers_topic(self) -> None:
         draft = FindingDraft(
@@ -260,6 +324,39 @@ class FindingAnalysisTests(unittest.TestCase):
                     )
                 ],
             )
+
+    def test_service_repairs_missing_topic_once(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+            base_url="https://api.deepseek.com",
+        )
+        original = FindingDraft(candidates=[self.valid_draft().candidates[0]])
+        repair = FindingDraft(
+            discovery_candidates=[
+                DiscoveryCandidate(
+                    title="搜索完整性待验证",
+                    reason="当前只有一条 mixed 评论。",
+                    insight_ids=["INSIGHT-004"],
+                )
+            ]
+        )
+        structured_client = MagicMock()
+        structured_client.chat.completions.create.side_effect = [original, repair]
+
+        with patch("openai.OpenAI"), patch(
+            "instructor.from_openai", return_value=structured_client
+        ):
+            result = FindingAnalysisService(config).generate(
+                self.reviews, self.topic_result, "关注稳定性"
+            )
+
+        self.assertEqual(structured_client.chat.completions.create.call_count, 2)
+        repair_call = structured_client.chat.completions.create.call_args_list[1]
+        self.assertIn("TOPIC-002", repair_call.kwargs["messages"][1]["content"])
+        self.assertNotIn("TOPIC-001", repair_call.kwargs["messages"][1]["content"])
+        self.assertEqual(len(result.findings), 1)
+        self.assertEqual(len(result.discovery_items), 1)
 
 
 if __name__ == "__main__":
