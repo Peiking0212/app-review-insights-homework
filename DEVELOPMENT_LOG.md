@@ -13,10 +13,11 @@
 
 每次开始开发：
 
-1. 阅读 `AGENTS.md`、`AI_USAGE.md` 和本文件。
+1. 阅读 `AGENTS.md`、`AI_USAGE.md`、`REFERENCE_PLAYBOOK.md` 和本文件。
 2. 查看 Git 状态，不覆盖用户修改。
 3. 运行当前测试和语法检查。
-4. 只选择一个“下一任务”完成。
+4. 查看当前阶段对应的 1～2 个参考案例，记录借鉴与不借鉴内容。
+5. 只选择一个“下一任务”完成。
 
 每次结束开发：
 
@@ -24,6 +25,8 @@
 2. 更新阶段状态和当天日志。
 3. 记录错误、取舍和下一步。
 4. 一个独立阶段通过验收后创建 Git commit。
+
+参考学习必须服从 P0 范围和截止时间。完整映射、资料链接及记录模板见 `REFERENCE_PLAYBOOK.md`。
 
 ## 3. 当前基线（2026-07-17 已验证）
 
@@ -71,6 +74,7 @@ UTF-8 source read: passed
 ### 阶段 2：动态主题发现
 
 - 状态：待开始
+- 阶段参考：Apple Review Summarization Pipeline、Instructor + Pydantic、所选 LLM 官方文档。
 - 任务：
   - [ ] 添加 `.env.example` 和模型客户端。
   - [ ] 使用结构化输出生成动态 Topic。
@@ -83,6 +87,7 @@ UTF-8 source read: passed
 ### 阶段 3：Evidence Finding
 
 - 状态：待开始
+- 阶段参考：Apple Review Summarization Pipeline、Python Validator。
 - 任务：
   - [ ] 每个 Finding 返回支持和冲突 Review ID。
   - [ ] Python 检查 Review ID。
@@ -96,6 +101,7 @@ UTF-8 source read: passed
 ### 阶段 4：版本规划与 PRD
 
 - 状态：待开始
+- 阶段参考：Apple Pipeline 的代表性证据与平衡原则、Python Validator。
 - 任务：
   - [ ] 按证据、严重度、目标相关性和范围规划版本。
   - [ ] 生成 3–6 条核心 Requirement。
@@ -107,6 +113,7 @@ UTF-8 source read: passed
 ### 阶段 5：测试用例与追溯检查
 
 - 状态：待开始
+- 阶段参考：Python Validator。
 - 任务：
   - [ ] 每个 P0/P1 Requirement 生成正常和异常测试用例。
   - [ ] 校验 TestCase → Requirement → Review。
@@ -117,6 +124,7 @@ UTF-8 source read: passed
 ### 阶段 6：美国区 App Store 采集
 
 - 状态：待开始
+- 阶段参考：App Store Scraper。
 - 任务：
   - [ ] 解析 App Store URL 和 App ID。
   - [ ] 强制使用美国区评论。
@@ -128,6 +136,7 @@ UTF-8 source read: passed
 ### 阶段 7：缓存 Demo、导出和错误恢复
 
 - 状态：待开始
+- 阶段参考：Streamlit、Rereflect 信息层级。
 - 任务：
   - [ ] 保存一次真实、经过校验的分析缓存。
   - [ ] 无 Key/无网络时一键加载缓存。
@@ -139,6 +148,7 @@ UTF-8 source read: passed
 ### 阶段 8：最终交付
 
 - 状态：待开始
+- 阶段参考：Streamlit、Rereflect 信息层级。
 - 任务：
   - [ ] README 补齐架构、数据来源、限制、防幻觉和启动命令。
   - [ ] 新目录、新虚拟环境重新安装和启动。
@@ -153,6 +163,8 @@ UTF-8 source read: passed
 ## 5. 当前唯一下一任务
 
 > 完成阶段 2：实现基于当前评论动态生成 Topic 的第一版，不接 App Store 实时采集，不生成 PRD。
+
+阶段开始前查看：Apple Review Summarization Pipeline、Instructor + Pydantic、所选 LLM 的结构化输出说明。重点记录原子 Insight、动态 Topic、结构化输出和失败停止；不借鉴模型训练、多 Agent 或复杂云架构。
 
 建议交给 AI 的提示：
 
@@ -208,6 +220,18 @@ UTF-8 source read: passed
 - 关联 commit：本次可追溯数据模型提交。
 - 下一步：阶段 2 动态主题发现。
 
+### 2026-07-18 / 项目参考与借鉴手册
+
+- 完成：建立 `REFERENCE_PLAYBOOK.md`，将七类参考案例映射到各开发阶段。
+- 修改文件：`REFERENCE_PLAYBOOK.md`、`AGENTS.md`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：文档链接和 UTF-8 检查通过；现有 14 个自动测试保持通过。
+- 遇到的问题：参考案例覆盖面很大，全部照搬会超出截止时间和 P0 范围。
+- 我的取舍：每阶段只重点查看 1～2 个案例，并记录采用、不采用、原因和验证。
+- 当前可以演示：项目为什么参考这些案例，以及每个案例具体影响哪个阶段。
+- 尚未完成：阶段 2 动态主题及后续完整闭环。
+- 关联 commit：本次参考手册提交。
+- 下一步：阶段 2 动态主题发现；开始前查看 Apple Pipeline、Instructor/Pydantic 和所选 LLM 文档。
+
 ## 7. 每次收工填写模板
 
 ```markdown
@@ -223,6 +247,9 @@ UTF-8 source read: passed
 - 尚未完成：
 - 关联 commit：
 - 下一步：
+- 查看资料：
+- 实际借鉴：
+- 明确不借鉴及原因：
 ```
 
 ## 8. 最终提交检查表

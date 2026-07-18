@@ -1,6 +1,6 @@
 # ReviewScope AI 仓库协作规则
 
-本文件用于指导在本仓库中工作的 AI 编程助手。开始任何开发任务前，必须先阅读本文件、`README.md`、`AI_USAGE.md` 和 `DEVELOPMENT_LOG.md`。
+本文件用于指导在本仓库中工作的 AI 编程助手。开始任何开发任务前，必须先阅读本文件、`README.md`、`AI_USAGE.md`、`REFERENCE_PLAYBOOK.md` 和 `DEVELOPMENT_LOG.md`。
 
 ## 1. 项目目标
 
@@ -16,7 +16,7 @@ Review → Topic → Finding → Requirement / PRD → Test Case
 
 AI 在修改代码前必须依次执行：
 
-1. 阅读 `README.md`、`AI_USAGE.md` 和 `DEVELOPMENT_LOG.md`。
+1. 阅读 `README.md`、`AI_USAGE.md`、`REFERENCE_PLAYBOOK.md` 和 `DEVELOPMENT_LOG.md`。
 2. 执行 `git status --short --branch`，识别用户已有修改，不覆盖无关文件。
 3. 使用 UTF-8 读取中文文件；终端乱码不代表源文件损坏，先用 Python UTF-8 读取验证。
 4. 执行当前基线测试：
@@ -27,7 +27,8 @@ AI 在修改代码前必须依次执行：
    ```
 
 5. 在 `DEVELOPMENT_LOG.md` 中确认当前阶段、下一任务和验收标准。
-6. 先说明本次准备完成什么，再开始修改。
+6. 按 `REFERENCE_PLAYBOOK.md` 查看当前阶段对应的 1～2 个案例，记录借鉴、不借鉴及原因。
+7. 先说明本次准备完成什么，再开始修改。
 
 ## 3. 开发优先级
 
@@ -72,6 +73,7 @@ Python 负责：
 - 新增核心逻辑必须增加或更新测试。
 - 不为示例 App 写死“订阅、训练、广告”等分类。
 - 缓存结果必须来自真实运行，并记录数据来源、抓取时间、模型和限制。
+- 外部案例只用于学习设计和实现思路；不得在未检查许可证、依赖和适用范围时复制代码。
 
 ## 6. 每次完成任务后的固定流程
 
@@ -79,8 +81,9 @@ Python 负责：
 2. 启动或编译检查入口文件，确认程序没有语法错误。
 3. 检查 `git diff`，确认没有 Key、密码、Cookie 或无关文件。
 4. 更新 `DEVELOPMENT_LOG.md`：完成项、测试结果、问题、下一步。
-5. 如本次使用 AI 产生了重要设计或代码，更新 `AI_USAGE.md` 的使用记录。
-6. 向用户说明：完成了什么、如何验证、当前风险、下一步建议。
+5. 在日志中记录实际采用的参考做法、差异、验证结果和遗留限制。
+6. 如本次使用 AI 产生了重要设计或代码，更新 `AI_USAGE.md` 的使用记录。
+7. 向用户说明：完成了什么、如何验证、当前风险、下一步建议。
 
 ## 7. Git 提交规则
 
