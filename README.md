@@ -181,19 +181,24 @@ Review → Topic → Finding → Requirement → TestCase
 
 ```text
 清洗后 Review
-→ AI 提取单一方面、单一主要情绪的 Atomic Insight
-→ AI 根据本次 Insight 动态聚合 Topic
-→ Python 校验 Review / Insight 引用
+→ Python 按固定大小分批（默认每批 20 条）
+→ AI 每批只提取 Atomic Insight Candidate
+→ Python 校验每批 Review 覆盖并分配全局 INSIGHT-* ID
+→ AI 对全部已验证 Insight 统一聚合 Topic Candidate
+→ Python 分配 TOPIC-* ID并推导代表 Review
+→ Python 校验 Review / Insight / Topic 全部引用
 → UI 展示主题、原子观点、代表评论和限制
 ```
 
-提示词明确禁止预设健身、订阅、广告等行业分类。一条 Review 可以包含多个独立问题，因此可以生成多条 Atomic Insight；但每条 Insight 只能表达一个具体方面和一种主要情绪，并且只能归入一个 Topic。完全没有可用 Insight 的评论进入 `OTHER`。Pydantic 与最终 Python Validator 会共同拦截跨 Topic 重复归类、非法引用和遗漏评论。如果 API、网络、结构化输出或引用校验失败，本阶段会停止，不会继续生成没有证据的 Finding 或 PRD。
+Insight 提取和 Topic 聚合使用两个不同的 Schema 与 Prompt。提取批次看不到 Topic 字段，也不允许生成 Insight ID；聚合步骤只接收全量已验证 Insight，看不到原始评论，也不允许输出代表评论。这样避免单次请求同时承担长文本提取、跨评论聚合和三层 ID 关系。
+
+提示词明确禁止预设健身、订阅、广告等行业分类。一条 Review 可以包含多个独立问题，因此可以生成多条 Atomic Insight；但每条 Insight 只能表达一个具体方面和一种主要情绪，并且只能归入一个 Topic。完全没有可用 Insight 的评论进入 `OTHER`。Pydantic 与最终 Python Validator 会共同拦截批次遗漏、跨批非法 Review、跨 Topic 重复归类、虚构 Insight 和未分配 Insight。如果任一批次、统一聚合或引用校验失败，本阶段会停止，不会继续生成没有证据的 Finding 或 PRD。
 
 UI 会同时展示 Atomic Insight 数量和涉及的去重 Review 数量。后续统计“支持评论数”时必须按 Review ID 去重，不能把 Insight 数量当作用户评论数量。
 
 侧栏的“模型配置：已读取”只代表 `.env` 字段齐全；只有真实模型请求成功后才会显示“模型调用：已验证”。调用失败时，页面会显示脱敏后的底层服务商错误，API Key 和 Bearer Token 会被隐藏。
 
-内置数据只能验证这条流程。2026-07-18 已使用本地 DeepSeek Key 完成两组真实模型调用：健身/订阅示例的 5 条有效评论生成 5 个 Atomic Insight 和 4 个 Topic；外卖领域 `synthetic_test` 的 8 条有效评论生成 10 个 Atomic Insight、覆盖 8 条去重 Review，并形成 5 个 Topic。外卖数据中两条多问题评论各产生两个有原文依据的独立 Insight。两组引用与覆盖校验均通过，证明 Topic 会随输入变化。两组仍是功能测试数据，不能替代最终美国区 App Store 真实评论。
+内置数据只能验证这条流程。2026-07-18 重构后使用本地 DeepSeek Key，以 `batch_size=2` 将 5 条有效评论分为 3 批，生成 6 个由 Python 统一编号的 Atomic Insight，再全量聚合为 5 个由 Python 编号的 Topic。所有评论均被处理、所有 Insight 恰好归入一个 Topic、所有代表评论均来自 Topic 内 Review。此前外卖领域 `synthetic_test` 也证明 Topic 会随输入变化；这些仍是功能测试数据，不能替代最终美国区 App Store 真实评论。
 
 ## Evidence Finding
 

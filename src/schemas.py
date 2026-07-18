@@ -71,6 +71,84 @@ class AtomicInsight(StrictModel):
     sentiment: Literal["positive", "negative", "neutral", "mixed"]
 
 
+class AtomicInsightCandidate(StrictModel):
+    """单个批次由模型提取的观点；全局 Insight ID 由 Python 分配。"""
+
+    review_id: str = Field(pattern=r"^REV-[A-Za-z0-9_-]+$")
+    statement: str = Field(min_length=1)
+    sentiment: Literal["positive", "negative", "neutral", "mixed"]
+
+
+class InsightExtractionBatch(StrictModel):
+    """一个评论批次的 Insight 提取结果，不包含 Topic。"""
+
+    insights: list[AtomicInsightCandidate] = Field(default_factory=list)
+    other_review_ids: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+    @field_validator("other_review_ids")
+    @classmethod
+    def validate_other_review_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "REV-")
+
+    @model_validator(mode="after")
+    def review_assignments_must_not_overlap(self) -> "InsightExtractionBatch":
+        insight_review_ids = {item.review_id for item in self.insights}
+        overlap = insight_review_ids & set(self.other_review_ids)
+        if overlap:
+            raise ValueError(
+                "评论不能同时产生 Insight 并进入 OTHER："
+                + ", ".join(sorted(overlap))
+            )
+        identities = [
+            (item.review_id, item.statement.casefold(), item.sentiment)
+            for item in self.insights
+        ]
+        if len(identities) != len(set(identities)):
+            raise ValueError("同一批次不得重复改写相同 Atomic Insight")
+        return self
+
+
+class TopicCandidate(StrictModel):
+    """模型对全量 Insight 的主题分组；不允许模型选择代表评论。"""
+
+    candidate_id: str = Field(pattern=r"^TOPIC-CAND-[A-Za-z0-9_-]+$")
+    name: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    insight_ids: list[str] = Field(min_length=1)
+
+    @field_validator("insight_ids")
+    @classmethod
+    def validate_insight_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "INSIGHT-")
+
+
+class TopicAggregationDraft(StrictModel):
+    """全量 Insight 一次统一聚合得到的 Topic 草稿。"""
+
+    topics: list[TopicCandidate] = Field(min_length=1)
+    limitations: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def assignments_must_be_unique(self) -> "TopicAggregationDraft":
+        candidate_ids = [topic.candidate_id for topic in self.topics]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            raise ValueError("Topic Candidate ID 不得重复")
+        assigned_ids = [
+            insight_id for topic in self.topics for insight_id in topic.insight_ids
+        ]
+        duplicated = sorted(
+            insight_id
+            for insight_id, count in Counter(assigned_ids).items()
+            if count > 1
+        )
+        if duplicated:
+            raise ValueError(
+                "Atomic Insight 只能属于一个 Topic：" + ", ".join(duplicated)
+            )
+        return self
+
+
 class TopicDiscoveryResult(StrictModel):
     """动态主题阶段的完整结构化输出。"""
 
@@ -78,6 +156,7 @@ class TopicDiscoveryResult(StrictModel):
     topics: list[Topic] = Field(default_factory=list)
     other_review_ids: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
+    extraction_batch_count: int = Field(default=1, ge=1)
 
     @field_validator("other_review_ids")
     @classmethod

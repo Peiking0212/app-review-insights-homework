@@ -73,7 +73,7 @@ UTF-8 source read: passed
 
 ### 阶段 2：动态主题发现
 
-- 状态：已完成（两组测试数据真实模型验收通过）
+- 状态：已完成（已升级为分批 Insight 提取 + 全量 Topic 聚合）
 - 阶段参考：Apple Review Summarization Pipeline、Instructor + Pydantic、所选 LLM 官方文档。
 - 任务：
   - [x] 添加 `.env.example` 和模型客户端。
@@ -82,8 +82,10 @@ UTF-8 source read: passed
   - [x] 支持 OTHER/无法判断。
   - [x] 模型失败时显示错误，不生成下游结果。
   - [x] 一条 Review 可生成多个独立 Insight，每条 Insight 只属于一个 Topic。
+  - [x] 按批次提取 Atomic Insight，再对全量 Insight 统一聚合 Topic。
+  - [x] Python 分配全局 Insight/Topic ID并推导代表 Review。
 - 验收：更换评论数据后主题发生合理变化，结构校验通过。
-- 已验证：29 个自动测试、Python 3.9 Instructor 客户端创建、未配置 Key 的 UI 失败停止路径；DeepSeek V4 Flash 对健身/订阅示例生成 5 个 Insight 和 4 个 Topic，对外卖 `synthetic_test` 的 8 条 Review 生成 10 个 Insight 和 5 个不同 Topic；覆盖 8 条去重 Review，无 Insight 跨 Topic 重复。
+- 已验证：72 个自动测试；DeepSeek V4 Flash 将 5 条 Review 分 3 批提取 6 个全局 Insight，再统一形成 5 个 Topic；所有 Review 完整处理、Insight 恰好归入一个 Topic、代表 Review 全部由 Python 推导。
 - 遗留限制：两组都是功能测试数据；最终用户结论仍必须使用阶段 6 采集的美国区真实评论或透明缓存。
 - 建议 commit：`feat: add model-driven dynamic topic discovery`
 
@@ -374,6 +376,22 @@ UTF-8 source read: passed
 - 查看资料：Homework 原始 README、Apple App Store Connect Customer Reviews 文档、项目 App Store Scraper 参考原则。
 - 实际借鉴：按 storefront 分区、有限分页、请求间隔、稳定来源 ID、真实来源与限制可见、失败降级。
 - 明确不借鉴及原因：不抓取页面 DOM、不复制第三方 scraper 代码、不使用无限重试、不把空页解释为零评论；这些做法脆弱、可能增加负载或产生错误结论。
+
+### 2026-07-18 / 动态主题分批提取与统一聚合重构
+
+- 完成：将单次 Review → Insight → Topic 调用拆成分批 Insight Extraction 与全量 Topic Aggregation；增加批次 Schema、全局 ID 分配、代表评论推导和逐层引用校验。
+- 修改文件：`src/schemas.py`、`src/prompts.py`、`src/topic_discovery.py`、`tests/test_topic_discovery.py`、README 与 AI/开发记录。
+- 测试命令与结果：Topic 专项 18 个测试、全部 72 个自动测试及语法检查通过；真实 DeepSeek 多批次调用通过。
+- 遇到的问题：旧流程让一次模型调用同时读取全部评论、提取 Insight、生成三层 ID、聚合 Topic 和选择代表评论，输入扩大后职责过多且关系更容易漂移。
+- AI 建议中的错误或风险：如果各批次自行生成 Insight ID，会产生跨批重复；如果各批次先生成 Topic，再合并 Topic，会失去全量语义对比；让模型选择代表评论还会增加一层可避免的引用幻觉。
+- 我的取舍：每批模型只返回 Review 引用、观点和情绪；Python 按顺序生成全局 `INSIGHT-*`；第二次模型只聚合全量 Insight；Python 生成 `TOPIC-*` 并按 Topic 内 Insight 数量和原评论顺序选择最多 3 条代表 Review。
+- 当前可以演示：多批次次数、全局唯一 Insight、统一 Topic、Python 代表评论和完整 Review/Insight/Topic 引用门。
+- 尚未完成：阶段 6 提交尚未推送；真实缓存 Demo、导出和错误恢复仍待阶段 7。
+- 关联 commit：本次动态主题两阶段重构提交。
+- 下一步：先推送阶段 6 与本次修复，再进入阶段 7。
+- 查看资料：项目 Apple Review Summarization Pipeline 与 Instructor/Pydantic 结构化输出原则。
+- 实际借鉴：原子观点分批处理、聚合与提取职责分离、结构化输出、全局确定性 ID 和失败阻断。
+- 明确不借鉴及原因：不做批次级 Topic 后合并、不用 Embedding/向量库、不让模型生成代表 Review；这些会增加语义漂移、复杂度或引用风险。
 
 ## 7. 每次收工填写模板
 

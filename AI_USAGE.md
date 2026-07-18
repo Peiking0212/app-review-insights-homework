@@ -274,6 +274,18 @@ AI 不得直接决定或伪造：
 - 测试结果：新增 8 个采集测试；全部 67 个自动测试和语法检查通过；中国区题目链接输入真实获得 100 条美国区评论，ID 唯一、storefront/source 全部正确。
 - 关联 commit：本次美国区 App Store 采集提交。
 
+### 2026-07-18 / 动态主题分批提取与统一聚合重构
+
+- 使用工具或模型：Codex 辅助重构；DeepSeek V4 Flash 多次结构化调用；Instructor、Pydantic、Python Validator。
+- 我的目标：让动态主题能处理更多评论，同时减少一个模型输出同时维护 Review、Insight、Topic 和代表评论关系的风险。
+- 提供给 AI 的关键信息：清洗后 Review、分析目标、批次编号；聚合阶段只提供 Python 编号后的全量 Atomic Insight。
+- AI 生成或建议了什么：每批 AtomicInsightCandidate 和一次全量 TopicCandidate；模型不生成最终 Insight/Topic ID或代表 Review。
+- 我发现的问题：旧单次调用把文本提取与全局聚合绑在一起；评论增多时上下文变大，模型还要同时维护多层引用。
+- 我如何验证：测试批次顺序、批次遗漏、全局 ID、统一分配、代表 Review 推导、DeepSeek 参数在每次调用都生效及下游完整回归；再进行 3 批真实调用。
+- 我做出的修改或取舍：默认每 20 条评论提取一次；全部批次完成后才统一聚合；任一批次失败则停止，不输出部分 Topic；代表 Review 由 Python 按证据数量和原始顺序确定。
+- 测试结果：Topic 专项 18 个测试、全部 72 个自动测试通过；真实 3 批生成 6 个全局 Insight 和 5 个 Topic，全部引用校验通过。
+- 关联 commit：本次动态主题两阶段重构提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：
