@@ -286,6 +286,18 @@ AI 不得直接决定或伪造：
 - 测试结果：Topic 专项 18 个测试、全部 72 个自动测试通过；真实 3 批生成 6 个全局 Insight 和 5 个 Topic，全部引用校验通过。
 - 关联 commit：本次动态主题两阶段重构提交。
 
+### 2026-07-18 / 动态主题遗漏的两级有限修复
+
+- 使用工具或模型：Codex 辅助实现；Instructor、Pydantic、Python Validator；运行时使用当前配置的结构化输出模型。
+- 我的目标：处理 Atomic Insight 批次偶发遗漏 Review，以及第一次 Topic 聚合偶发遗漏 `INSIGHT-*`，同时保留严格证据门。
+- 提供给 AI 的关键信息：提取修复只提供 Python 确认遗漏的评论；聚合修复只提供现有 Topic 摘要和遗漏 Insight，不提供已正确处理的完整内容。
+- AI 生成或建议了什么：为遗漏评论补充 Insight/OTHER 归属；把遗漏 Insight 加入现有 Topic，或创建语义确实不同的新 Topic Candidate。
+- 我发现的问题：结构化 Schema 能约束格式，却无法预先知道运行时 Review 和 Insight 的完整集合；两层“完整覆盖”都必须由 Python 检查。
+- 我如何验证：覆盖只补一条 Review、第二次仍遗漏即停止、加入现有 Topic、新建 Topic、拒绝非遗漏 Insight，以及每种修复 Prompt 的最小输入。
+- 我做出的修改或取舍：每一级只修复“纯遗漏”且最多一次；非法 ID、重复归类或伪造 Review 不进入修复；修复后重新执行完整质量门。
+- 测试结果：Topic 专项 27 个测试、全部 82 个自动测试通过。
+- 关联 commit：本次动态主题两级有限修复提交。
+
 ### 2026-07-18 / 测试候选数量动态收敛
 
 - 使用工具或模型：Codex 辅助诊断与实现；Instructor、Pydantic、Python Validator；运行时使用当前结构化输出模型。

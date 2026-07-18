@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 
-from src.schemas import AtomicInsight, Review
+from src.schemas import AtomicInsight, Review, TopicAggregationDraft
 
 
 INSIGHT_EXTRACTION_SYSTEM_PROMPT = """
@@ -22,6 +22,19 @@ INSIGHT_EXTRACTION_SYSTEM_PROMPT = """
 """.strip()
 
 
+INSIGHT_REPAIR_SYSTEM_PROMPT = """
+你是 App 评论研究员。上一轮 Atomic Insight 提取遗漏了少量评论，当前只执行一次有限补提取。
+
+规则：
+1. 只处理本次输入的 missing_reviews；每条必须产生至少一个 Insight，或者进入 OTHER。
+2. review_id 必须原样引用 missing_reviews 中的 ID，不得引用上一轮已经处理的评论。
+3. 不得为了完成覆盖而编造观点；没有可用观点时必须进入 other_review_ids。
+4. 每条 Insight 只表达一个具体方面和一种主要情绪，不生成 insight_id。
+5. 不生成 Topic、代表评论、Finding、需求、PRD 或测试用例。
+6. 本次补提取仍无法判断的原因写入 limitations。
+""".strip()
+
+
 TOPIC_AGGREGATION_SYSTEM_PROMPT = """
 你是 App 评论研究员。当前步骤只对全量已验证 Atomic Insight 统一聚合 Topic。
 
@@ -35,6 +48,21 @@ TOPIC_AGGREGATION_SYSTEM_PROMPT = """
 7. 不输出 representative_review_ids；代表评论由 Python 从 Topic 内 Insight 推导。
 8. 不生成 Finding、需求、PRD、测试用例或改进建议。
 9. 聚合限制写入 limitations，不得编造统计数字。
+""".strip()
+
+
+TOPIC_REPAIR_SYSTEM_PROMPT = """
+你是 App 评论研究员。第一次 Topic 聚合遗漏了少量已验证 Atomic Insight，当前只执行一次有限修复。
+
+规则：
+1. 只处理 missing_insights 中列出的 Insight；每条必须且只能出现一次。
+2. 可以用 existing_topic_assignments 把遗漏 Insight 加入现有 candidate_id，或用 new_topics 创建语义确实不同的新 Topic。
+3. 不得引用、复制或重新分配任何非 missing_insights 的 Insight ID。
+4. existing_topic_assignments 的 candidate_id 必须来自 existing_topics。
+5. new_topics 的 candidate_id 不得与 existing_topics 重复，名称和说明不得改变评论原意。
+6. 不修改现有 Topic 名称、说明和已有 Insight 分组。
+7. 不输出代表评论、Finding、需求、PRD 或测试用例。
+8. 无法可靠判断时仍需选择语义最接近的现有 Topic，并在 limitations 中说明，不得遗漏。
 """.strip()
 
 
@@ -66,6 +94,35 @@ def build_insight_extraction_messages(
     ]
 
 
+def build_insight_repair_messages(
+    missing_reviews: Sequence[Review],
+    analysis_goal: str,
+    batch_index: int,
+    batch_count: int,
+) -> list[dict[str, str]]:
+    """只把首轮遗漏的评论交给模型进行一次有限补提取。"""
+    payload = [
+        {
+            "review_id": review.review_id,
+            "rating": review.rating,
+            "title": review.title,
+            "content": review.content,
+        }
+        for review in missing_reviews
+    ]
+    user_prompt = (
+        f"分析目标：{analysis_goal.strip() or '发现当前评论中的主要用户体验主题'}\n"
+        f"原批次：{batch_index}/{batch_count}\n\n"
+        "请只补处理以下 missing_reviews。输出前确认每个 Review ID 恰好进入 "
+        "Insight 或 OTHER，不得引用其他评论：\n"
+        + json.dumps(payload, ensure_ascii=False, indent=2)
+    )
+    return [
+        {"role": "system", "content": INSIGHT_REPAIR_SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt},
+    ]
+
+
 def build_topic_aggregation_messages(
     insights: Sequence[AtomicInsight], analysis_goal: str
 ) -> list[dict[str, str]]:
@@ -80,4 +137,39 @@ def build_topic_aggregation_messages(
     return [
         {"role": "system", "content": TOPIC_AGGREGATION_SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
+    ]
+
+
+def build_topic_repair_messages(
+    draft: TopicAggregationDraft,
+    missing_insights: Sequence[AtomicInsight],
+    analysis_goal: str,
+) -> list[dict[str, str]]:
+    """构造只处理第一次聚合遗漏 Insight 的有限修复消息。"""
+    payload = {
+        "analysis_goal": analysis_goal.strip()
+        or "发现当前评论中的主要用户体验主题",
+        "existing_topics": [
+            {
+                "candidate_id": topic.candidate_id,
+                "name": topic.name,
+                "description": topic.description,
+                "existing_insight_count": len(topic.insight_ids),
+            }
+            for topic in draft.topics
+        ],
+        "missing_insights": [
+            insight.model_dump(mode="json") for insight in missing_insights
+        ],
+    }
+    return [
+        {"role": "system", "content": TOPIC_REPAIR_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                "请只修复以下遗漏 Insight 的 Topic 归属。输出前确认每个 missing "
+                "Insight 恰好出现一次，且没有其他 Insight ID：\n"
+                + json.dumps(payload, ensure_ascii=False, indent=2)
+            ),
+        },
     ]

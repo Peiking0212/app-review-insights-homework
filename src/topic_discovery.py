@@ -11,7 +11,9 @@ from urllib.parse import urlparse
 from src.config import ModelConfig
 from src.prompts import (
     build_insight_extraction_messages,
+    build_insight_repair_messages,
     build_topic_aggregation_messages,
+    build_topic_repair_messages,
 )
 from src.schemas import (
     AtomicInsight,
@@ -19,6 +21,7 @@ from src.schemas import (
     Review,
     Topic,
     TopicAggregationDraft,
+    TopicAggregationRepairDraft,
     TopicDiscoveryResult,
 )
 
@@ -29,6 +32,26 @@ MAX_REPRESENTATIVE_REVIEWS = 3
 
 class TopicDiscoveryError(RuntimeError):
     """主题发现无法安全完成。"""
+
+
+class IncompleteInsightBatchError(TopicDiscoveryError):
+    """Insight 批次只有评论遗漏，可进入一次有限补提取。"""
+
+    def __init__(self, missing_review_ids: Sequence[str]) -> None:
+        self.missing_review_ids = list(missing_review_ids)
+        super().__init__(
+            "本批评论未被处理：" + ", ".join(self.missing_review_ids)
+        )
+
+
+class IncompleteTopicAggregationError(TopicDiscoveryError):
+    """Topic 聚合只有 Insight 遗漏，可进入一次有限修复。"""
+
+    def __init__(self, missing_insight_ids: Sequence[str]) -> None:
+        self.missing_insight_ids = list(missing_insight_ids)
+        super().__init__(
+            "Insight 没有归入 Topic：" + ", ".join(self.missing_insight_ids)
+        )
 
 
 def _uses_deepseek(config: ModelConfig) -> bool:
@@ -134,7 +157,38 @@ def validate_insight_batch(
     if unaccounted:
         errors.append("本批评论未被处理：" + ", ".join(unaccounted))
     if errors:
+        if (
+            unaccounted
+            and not invalid_insight_reviews
+            and not invalid_other_reviews
+            and not overlap
+        ):
+            raise IncompleteInsightBatchError(unaccounted)
         raise TopicDiscoveryError("；".join(errors))
+
+
+def merge_insight_batch_repair(
+    original: InsightExtractionBatch,
+    repair: InsightExtractionBatch,
+    batch_review_ids: set[str],
+    missing_review_ids: set[str],
+) -> InsightExtractionBatch:
+    """合并一次遗漏评论补提取，并重新执行完整批次质量门。"""
+    validate_insight_batch(repair, missing_review_ids)
+    merged = InsightExtractionBatch(
+        insights=[*original.insights, *repair.insights],
+        other_review_ids=[
+            *original.other_review_ids,
+            *repair.other_review_ids,
+        ],
+        limitations=[
+            *original.limitations,
+            f"有限补提取处理了 {len(missing_review_ids)} 条首轮遗漏评论。",
+            *repair.limitations,
+        ],
+    )
+    validate_insight_batch(merged, batch_review_ids)
+    return merged
 
 
 def materialize_insights(
@@ -173,18 +227,12 @@ def _derive_representative_review_ids(
     return ranked[:MAX_REPRESENTATIVE_REVIEWS]
 
 
-def apply_topic_aggregation(
+def _aggregation_assignment_issues(
     draft: TopicAggregationDraft,
     insights: Sequence[AtomicInsight],
-    reviews: Sequence[Review],
-    other_review_ids: Sequence[str],
-    limitations: Sequence[str],
-    extraction_batch_count: int,
-) -> TopicDiscoveryResult:
-    """校验全量分组，并由 Python 生成 Topic ID 与代表评论。"""
-    insight_by_id = {insight.insight_id: insight for insight in insights}
-    valid_insight_ids = set(insight_by_id)
-    valid_review_ids = {review.review_id for review in reviews}
+) -> tuple[list[str], list[str], list[str]]:
+    """返回非法、重复和遗漏 Insight ID，供质量门与有限修复共用。"""
+    valid_insight_ids = {insight.insight_id for insight in insights}
     assigned_ids = [
         insight_id for topic in draft.topics for insight_id in topic.insight_ids
     ]
@@ -195,6 +243,102 @@ def apply_topic_aggregation(
         if count > 1
     )
     unassigned_ids = sorted(valid_insight_ids - set(assigned_ids))
+    return invalid_ids, duplicated_ids, unassigned_ids
+
+
+def apply_topic_repair(
+    draft: TopicAggregationDraft,
+    repair: TopicAggregationRepairDraft,
+    insights: Sequence[AtomicInsight],
+) -> TopicAggregationDraft:
+    """只合并遗漏 Insight 的一次修复，拒绝改写或复制现有分组。"""
+    invalid_ids, duplicated_ids, missing_ids = _aggregation_assignment_issues(
+        draft, insights
+    )
+    if invalid_ids or duplicated_ids or not missing_ids:
+        raise TopicDiscoveryError(
+            "只有纯遗漏 Insight 的聚合结果可以进入有限修复。"
+        )
+
+    existing_candidate_ids = {topic.candidate_id for topic in draft.topics}
+    assignment_by_candidate = {
+        assignment.candidate_id: assignment.insight_ids
+        for assignment in repair.existing_topic_assignments
+    }
+    repair_insight_ids = [
+        insight_id
+        for assignment in repair.existing_topic_assignments
+        for insight_id in assignment.insight_ids
+    ] + [
+        insight_id
+        for topic in repair.new_topics
+        for insight_id in topic.insight_ids
+    ]
+    errors: list[str] = []
+    unknown_candidates = sorted(
+        set(assignment_by_candidate) - existing_candidate_ids
+    )
+    conflicting_new_candidates = sorted(
+        {topic.candidate_id for topic in repair.new_topics}
+        & existing_candidate_ids
+    )
+    invalid_repair_insights = sorted(set(repair_insight_ids) - set(missing_ids))
+    still_missing = sorted(set(missing_ids) - set(repair_insight_ids))
+    if unknown_candidates:
+        errors.append(
+            "修复引用了不存在的 Topic Candidate："
+            + ", ".join(unknown_candidates)
+        )
+    if conflicting_new_candidates:
+        errors.append(
+            "新 Topic Candidate ID 与现有 Topic 重复："
+            + ", ".join(conflicting_new_candidates)
+        )
+    if invalid_repair_insights:
+        errors.append(
+            "修复引用了非遗漏 Insight：" + ", ".join(invalid_repair_insights)
+        )
+    if still_missing:
+        errors.append("修复后仍有遗漏 Insight：" + ", ".join(still_missing))
+    if errors:
+        raise TopicDiscoveryError("；".join(errors))
+
+    repaired_topics = [
+        topic.model_copy(
+            update={
+                "insight_ids": [
+                    *topic.insight_ids,
+                    *assignment_by_candidate.get(topic.candidate_id, []),
+                ]
+            }
+        )
+        for topic in draft.topics
+    ]
+    repaired_topics.extend(repair.new_topics)
+    return TopicAggregationDraft(
+        topics=repaired_topics,
+        limitations=[
+            *draft.limitations,
+            f"Topic 聚合有限修复补充了 {len(missing_ids)} 条遗漏 Insight。",
+            *repair.limitations,
+        ],
+    )
+
+
+def apply_topic_aggregation(
+    draft: TopicAggregationDraft,
+    insights: Sequence[AtomicInsight],
+    reviews: Sequence[Review],
+    other_review_ids: Sequence[str],
+    limitations: Sequence[str],
+    extraction_batch_count: int,
+) -> TopicDiscoveryResult:
+    """校验全量分组，并由 Python 生成 Topic ID 与代表评论。"""
+    insight_by_id = {insight.insight_id: insight for insight in insights}
+    valid_review_ids = {review.review_id for review in reviews}
+    invalid_ids, duplicated_ids, unassigned_ids = _aggregation_assignment_issues(
+        draft, insights
+    )
     errors: list[str] = []
     invalid_insight_reviews = sorted(
         {
@@ -219,6 +363,14 @@ def apply_topic_aggregation(
     if unassigned_ids:
         errors.append("Insight 没有归入 Topic：" + ", ".join(unassigned_ids))
     if errors:
+        if (
+            unassigned_ids
+            and not invalid_insight_reviews
+            and not invalid_other_reviews
+            and not invalid_ids
+            and not duplicated_ids
+        ):
+            raise IncompleteTopicAggregationError(unassigned_ids)
         raise TopicDiscoveryError("；".join(errors))
 
     review_order = {review.review_id: index for index, review in enumerate(reviews)}
@@ -364,9 +516,38 @@ class TopicDiscoveryService:
                     max_retries=1,
                     **build_model_request_options(self.config),
                 )
-                validate_insight_batch(
-                    batch_result, {review.review_id for review in batch}
-                )
+                batch_review_ids = {review.review_id for review in batch}
+                try:
+                    validate_insight_batch(batch_result, batch_review_ids)
+                except IncompleteInsightBatchError as incomplete_error:
+                    missing_review_ids = set(incomplete_error.missing_review_ids)
+                    missing_reviews = [
+                        review
+                        for review in batch
+                        if review.review_id in missing_review_ids
+                    ]
+                    current_stage = (
+                        f"Atomic Insight 批次 {batch_index}/{len(batches)} "
+                        "遗漏评论有限补提取"
+                    )
+                    repair_result = client.chat.completions.create(
+                        model=self.config.model,
+                        response_model=InsightExtractionBatch,
+                        messages=build_insight_repair_messages(
+                            missing_reviews,
+                            analysis_goal,
+                            batch_index,
+                            len(batches),
+                        ),
+                        max_retries=1,
+                        **build_model_request_options(self.config),
+                    )
+                    batch_result = merge_insight_batch_repair(
+                        batch_result,
+                        repair_result,
+                        batch_review_ids,
+                        missing_review_ids,
+                    )
                 batch_results.append(batch_result)
                 extraction_limitations.extend(
                     f"批次 {batch_index}：{limitation}"
@@ -400,14 +581,43 @@ class TopicDiscoveryService:
                 max_retries=1,
                 **build_model_request_options(self.config),
             )
-            return apply_topic_aggregation(
-                aggregation,
-                insights,
-                reviews,
-                other_review_ids,
-                extraction_limitations,
-                len(batches),
-            )
+            try:
+                return apply_topic_aggregation(
+                    aggregation,
+                    insights,
+                    reviews,
+                    other_review_ids,
+                    extraction_limitations,
+                    len(batches),
+                )
+            except IncompleteTopicAggregationError as incomplete_error:
+                missing_ids = incomplete_error.missing_insight_ids
+                current_stage = "遗漏 Atomic Insight 有限聚合修复"
+                insight_by_id = {
+                    insight.insight_id: insight for insight in insights
+                }
+                repair = client.chat.completions.create(
+                    model=self.config.model,
+                    response_model=TopicAggregationRepairDraft,
+                    messages=build_topic_repair_messages(
+                        aggregation,
+                        [insight_by_id[insight_id] for insight_id in missing_ids],
+                        analysis_goal,
+                    ),
+                    max_retries=1,
+                    **build_model_request_options(self.config),
+                )
+                repaired_aggregation = apply_topic_repair(
+                    aggregation, repair, insights
+                )
+                return apply_topic_aggregation(
+                    repaired_aggregation,
+                    insights,
+                    reviews,
+                    other_review_ids,
+                    extraction_limitations,
+                    len(batches),
+                )
         except TopicDiscoveryError:
             raise
         except Exception as error:

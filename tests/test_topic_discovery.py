@@ -6,9 +6,13 @@ from unittest.mock import MagicMock, patch
 from src.config import ModelConfig, ModelConfigError
 from src.prompts import (
     INSIGHT_EXTRACTION_SYSTEM_PROMPT,
+    INSIGHT_REPAIR_SYSTEM_PROMPT,
     TOPIC_AGGREGATION_SYSTEM_PROMPT,
+    TOPIC_REPAIR_SYSTEM_PROMPT,
     build_insight_extraction_messages,
+    build_insight_repair_messages,
     build_topic_aggregation_messages,
+    build_topic_repair_messages,
 )
 from src.schemas import (
     AtomicInsight,
@@ -16,16 +20,21 @@ from src.schemas import (
     InsightExtractionBatch,
     Topic,
     TopicAggregationDraft,
+    TopicAggregationRepairDraft,
     TopicCandidate,
     TopicDiscoveryResult,
+    TopicRepairAssignment,
 )
 from src.topic_discovery import (
+    IncompleteInsightBatchError,
     TopicDiscoveryError,
     TopicDiscoveryService,
     apply_topic_aggregation,
+    apply_topic_repair,
     batch_reviews,
     build_model_request_options,
     materialize_insights,
+    merge_insight_batch_repair,
     prepare_reviews,
     safe_provider_error,
     validate_insight_batch,
@@ -135,6 +144,30 @@ class TopicDiscoveryTests(unittest.TestCase):
         self.assertIn("不输出 representative_review_ids", TOPIC_AGGREGATION_SYSTEM_PROMPT)
         self.assertIn("INSIGHT-001", aggregation_messages[1]["content"])
 
+    def test_repair_prompt_only_contains_missing_insights(self) -> None:
+        draft = TopicAggregationDraft(
+            topics=[
+                TopicCandidate(
+                    candidate_id="TOPIC-CAND-001",
+                    name="登录稳定性",
+                    description="登录过程发生崩溃。",
+                    insight_ids=["INSIGHT-0001"],
+                )
+            ]
+        )
+        missing = AtomicInsight(
+            insight_id="INSIGHT-0002",
+            review_id="REV-0002",
+            statement="登录反复崩溃",
+            sentiment="negative",
+        )
+
+        messages = build_topic_repair_messages(draft, [missing], "关注稳定性")
+
+        self.assertIn("只处理 missing_insights", TOPIC_REPAIR_SYSTEM_PROMPT)
+        self.assertIn("INSIGHT-0002", messages[1]["content"])
+        self.assertNotIn("INSIGHT-0001", messages[1]["content"])
+
     def test_valid_result_passes_deterministic_reference_check(self) -> None:
         validate_topic_references(
             self.valid_result(), {review.review_id for review in self.reviews}
@@ -169,10 +202,43 @@ class TopicDiscoveryTests(unittest.TestCase):
             ]
         )
 
-        with self.assertRaisesRegex(TopicDiscoveryError, "本批评论未被处理"):
+        with self.assertRaisesRegex(IncompleteInsightBatchError, "本批评论未被处理"):
             validate_insight_batch(
                 batch_result, {"REV-0001", "REV-0002"}
             )
+
+    def test_insight_repair_prompt_only_contains_missing_reviews(self) -> None:
+        messages = build_insight_repair_messages(
+            [self.reviews[1]], "关注稳定性", 1, 2
+        )
+
+        self.assertIn("只处理本次输入", INSIGHT_REPAIR_SYSTEM_PROMPT)
+        self.assertIn("REV-0002", messages[1]["content"])
+        self.assertNotIn("REV-0001", messages[1]["content"])
+
+    def test_python_merges_one_missing_review_repair(self) -> None:
+        original = InsightExtractionBatch(
+            insights=[
+                AtomicInsightCandidate(
+                    review_id="REV-0001",
+                    statement="登录后崩溃",
+                    sentiment="negative",
+                )
+            ]
+        )
+        repair = InsightExtractionBatch(other_review_ids=["REV-0002"])
+
+        merged = merge_insight_batch_repair(
+            original,
+            repair,
+            {"REV-0001", "REV-0002"},
+            {"REV-0002"},
+        )
+
+        self.assertEqual(merged.other_review_ids, ["REV-0002"])
+        self.assertTrue(
+            any("有限补提取处理了 1 条" in item for item in merged.limitations)
+        )
 
     def test_python_assigns_global_insight_ids_across_batches(self) -> None:
         batch_results = [
@@ -249,6 +315,133 @@ class TopicDiscoveryTests(unittest.TestCase):
             ["REV-0001", "REV-0002"],
         )
         self.assertEqual(result.extraction_batch_count, 2)
+
+    def test_repair_assigns_missing_insight_to_existing_topic(self) -> None:
+        insights = [
+            AtomicInsight(
+                insight_id="INSIGHT-0001",
+                review_id="REV-0001",
+                statement="登录后崩溃",
+                sentiment="negative",
+            ),
+            AtomicInsight(
+                insight_id="INSIGHT-0002",
+                review_id="REV-0002",
+                statement="登录反复崩溃",
+                sentiment="negative",
+            ),
+        ]
+        draft = TopicAggregationDraft(
+            topics=[
+                TopicCandidate(
+                    candidate_id="TOPIC-CAND-001",
+                    name="登录稳定性",
+                    description="登录过程发生崩溃。",
+                    insight_ids=["INSIGHT-0001"],
+                )
+            ]
+        )
+        repair = TopicAggregationRepairDraft(
+            existing_topic_assignments=[
+                TopicRepairAssignment(
+                    candidate_id="TOPIC-CAND-001",
+                    insight_ids=["INSIGHT-0002"],
+                )
+            ]
+        )
+
+        repaired = apply_topic_repair(draft, repair, insights)
+        result = apply_topic_aggregation(
+            repaired, insights, self.reviews, ["REV-0003"], [], 2
+        )
+
+        self.assertEqual(
+            result.topics[0].insight_ids,
+            ["INSIGHT-0001", "INSIGHT-0002"],
+        )
+        self.assertIn("有限修复补充了 1 条", result.limitations[0])
+
+    def test_repair_can_create_new_topic(self) -> None:
+        insights = [
+            AtomicInsight(
+                insight_id="INSIGHT-0001",
+                review_id="REV-0001",
+                statement="登录后崩溃",
+                sentiment="negative",
+            ),
+            AtomicInsight(
+                insight_id="INSIGHT-0002",
+                review_id="REV-0002",
+                statement="订阅价格不清楚",
+                sentiment="negative",
+            ),
+        ]
+        draft = TopicAggregationDraft(
+            topics=[
+                TopicCandidate(
+                    candidate_id="TOPIC-CAND-001",
+                    name="登录稳定性",
+                    description="登录过程发生崩溃。",
+                    insight_ids=["INSIGHT-0001"],
+                )
+            ]
+        )
+        repair = TopicAggregationRepairDraft(
+            new_topics=[
+                TopicCandidate(
+                    candidate_id="TOPIC-CAND-REPAIR-001",
+                    name="订阅信息透明度",
+                    description="用户无法清楚理解订阅价格。",
+                    insight_ids=["INSIGHT-0002"],
+                )
+            ]
+        )
+
+        repaired = apply_topic_repair(draft, repair, insights)
+        result = apply_topic_aggregation(
+            repaired, insights, self.reviews, ["REV-0003"], [], 2
+        )
+
+        self.assertEqual(len(result.topics), 2)
+        self.assertEqual(result.topics[1].topic_id, "TOPIC-002")
+        self.assertEqual(result.topics[1].insight_ids, ["INSIGHT-0002"])
+
+    def test_repair_rejects_assignment_of_non_missing_insight(self) -> None:
+        insights = [
+            AtomicInsight(
+                insight_id="INSIGHT-0001",
+                review_id="REV-0001",
+                statement="登录后崩溃",
+                sentiment="negative",
+            ),
+            AtomicInsight(
+                insight_id="INSIGHT-0002",
+                review_id="REV-0002",
+                statement="登录反复崩溃",
+                sentiment="negative",
+            ),
+        ]
+        draft = TopicAggregationDraft(
+            topics=[
+                TopicCandidate(
+                    candidate_id="TOPIC-CAND-001",
+                    name="登录稳定性",
+                    description="登录过程发生崩溃。",
+                    insight_ids=["INSIGHT-0001"],
+                )
+            ]
+        )
+        repair = TopicAggregationRepairDraft(
+            existing_topic_assignments=[
+                TopicRepairAssignment(
+                    candidate_id="TOPIC-CAND-001",
+                    insight_ids=["INSIGHT-0001"],
+                )
+            ]
+        )
+
+        with self.assertRaisesRegex(TopicDiscoveryError, "非遗漏 Insight"):
+            apply_topic_repair(draft, repair, insights)
 
     def test_aggregation_rejects_insight_with_unknown_review(self) -> None:
         insights = [
@@ -378,6 +571,161 @@ class TopicDiscoveryTests(unittest.TestCase):
         self.assertEqual(
             result.topics[0].representative_review_ids,
             ["REV-0001", "REV-0002"],
+        )
+
+    def test_service_repairs_one_unaccounted_review_then_continues(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+            base_url="https://api.deepseek.com",
+        )
+        structured_client = MagicMock()
+        structured_client.chat.completions.create.side_effect = [
+            InsightExtractionBatch(
+                insights=[
+                    AtomicInsightCandidate(
+                        review_id="REV-0001",
+                        statement="登录后应用崩溃",
+                        sentiment="negative",
+                    )
+                ]
+            ),
+            InsightExtractionBatch(
+                insights=[
+                    AtomicInsightCandidate(
+                        review_id="REV-0002",
+                        statement="登录过程反复崩溃",
+                        sentiment="negative",
+                    )
+                ]
+            ),
+            InsightExtractionBatch(other_review_ids=["REV-0003"]),
+            TopicAggregationDraft(
+                topics=[
+                    TopicCandidate(
+                        candidate_id="TOPIC-CAND-001",
+                        name="登录稳定性",
+                        description="用户登录时遇到崩溃。",
+                        insight_ids=["INSIGHT-0001", "INSIGHT-0002"],
+                    )
+                ]
+            ),
+        ]
+
+        with patch("openai.OpenAI"), patch(
+            "instructor.from_openai", return_value=structured_client
+        ):
+            result = TopicDiscoveryService(config, batch_size=2).discover(
+                self.reviews, "关注稳定性"
+            )
+
+        calls = structured_client.chat.completions.create.call_args_list
+        self.assertEqual(len(calls), 4)
+        self.assertIs(calls[1].kwargs["response_model"], InsightExtractionBatch)
+        self.assertIn("REV-0002", calls[1].kwargs["messages"][1]["content"])
+        self.assertNotIn("REV-0001", calls[1].kwargs["messages"][1]["content"])
+        self.assertEqual(len(result.insights), 2)
+        self.assertTrue(
+            any("有限补提取处理了 1 条" in item for item in result.limitations)
+        )
+
+    def test_service_stops_after_one_failed_insight_repair(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+            base_url="https://api.deepseek.com",
+        )
+        structured_client = MagicMock()
+        structured_client.chat.completions.create.side_effect = [
+            InsightExtractionBatch(
+                insights=[
+                    AtomicInsightCandidate(
+                        review_id="REV-0001",
+                        statement="登录后应用崩溃",
+                        sentiment="negative",
+                    )
+                ]
+            ),
+            InsightExtractionBatch(),
+        ]
+
+        with patch("openai.OpenAI"), patch(
+            "instructor.from_openai", return_value=structured_client
+        ):
+            with self.assertRaisesRegex(
+                TopicDiscoveryError, "本批评论未被处理"
+            ):
+                TopicDiscoveryService(config, batch_size=2).discover(
+                    self.reviews, "关注稳定性"
+                )
+
+        self.assertEqual(
+            structured_client.chat.completions.create.call_count, 2
+        )
+
+    def test_service_repairs_one_missing_insight_then_passes_final_gate(self) -> None:
+        config = ModelConfig(
+            api_key="local-test-key",
+            model="deepseek-v4-flash",
+            base_url="https://api.deepseek.com",
+        )
+        structured_client = MagicMock()
+        structured_client.chat.completions.create.side_effect = [
+            InsightExtractionBatch(
+                insights=[
+                    AtomicInsightCandidate(
+                        review_id="REV-0001",
+                        statement="登录后应用崩溃",
+                        sentiment="negative",
+                    ),
+                    AtomicInsightCandidate(
+                        review_id="REV-0002",
+                        statement="登录过程反复崩溃",
+                        sentiment="negative",
+                    ),
+                ],
+            ),
+            InsightExtractionBatch(other_review_ids=["REV-0003"]),
+            TopicAggregationDraft(
+                topics=[
+                    TopicCandidate(
+                        candidate_id="TOPIC-CAND-001",
+                        name="登录稳定性",
+                        description="用户登录时遇到崩溃。",
+                        insight_ids=["INSIGHT-0001"],
+                    )
+                ]
+            ),
+            TopicAggregationRepairDraft(
+                existing_topic_assignments=[
+                    TopicRepairAssignment(
+                        candidate_id="TOPIC-CAND-001",
+                        insight_ids=["INSIGHT-0002"],
+                    )
+                ]
+            ),
+        ]
+
+        with patch("openai.OpenAI"), patch(
+            "instructor.from_openai", return_value=structured_client
+        ):
+            result = TopicDiscoveryService(config, batch_size=2).discover(
+                self.reviews, "关注稳定性"
+            )
+
+        calls = structured_client.chat.completions.create.call_args_list
+        self.assertEqual(len(calls), 4)
+        self.assertIs(
+            calls[-1].kwargs["response_model"], TopicAggregationRepairDraft
+        )
+        self.assertIn("INSIGHT-0002", calls[-1].kwargs["messages"][1]["content"])
+        self.assertNotIn("INSIGHT-0001", calls[-1].kwargs["messages"][1]["content"])
+        self.assertEqual(
+            result.topics[0].insight_ids,
+            ["INSIGHT-0001", "INSIGHT-0002"],
+        )
+        self.assertTrue(
+            any("有限修复补充了 1 条" in item for item in result.limitations)
         )
 
     def test_provider_error_is_unwrapped_and_secret_is_redacted(self) -> None:

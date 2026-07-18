@@ -189,7 +189,9 @@ Review → Topic → Finding → Requirement → TestCase
 → Python 按固定大小分批（默认每批 20 条）
 → AI 每批只提取 Atomic Insight Candidate
 → Python 校验每批 Review 覆盖并分配全局 INSIGHT-* ID
+→ 若某批仅遗漏 Review，AI 只对遗漏评论执行一次有限补提取
 → AI 对全部已验证 Insight 统一聚合 Topic Candidate
+→ 若 Python 发现只有少量 Insight 遗漏，AI 执行一次有限聚合修复
 → Python 分配 TOPIC-* ID并推导代表 Review
 → Python 校验 Review / Insight / Topic 全部引用
 → UI 展示主题、原子观点、代表评论和限制
@@ -197,7 +199,9 @@ Review → Topic → Finding → Requirement → TestCase
 
 Insight 提取和 Topic 聚合使用两个不同的 Schema 与 Prompt。提取批次看不到 Topic 字段，也不允许生成 Insight ID；聚合步骤只接收全量已验证 Insight，看不到原始评论，也不允许输出代表评论。这样避免单次请求同时承担长文本提取、跨评论聚合和三层 ID 关系。
 
-提示词明确禁止预设健身、订阅、广告等行业分类。一条 Review 可以包含多个独立问题，因此可以生成多条 Atomic Insight；但每条 Insight 只能表达一个具体方面和一种主要情绪，并且只能归入一个 Topic。完全没有可用 Insight 的评论进入 `OTHER`。Pydantic 与最终 Python Validator 会共同拦截批次遗漏、跨批非法 Review、跨 Topic 重复归类、虚构 Insight 和未分配 Insight。如果任一批次、统一聚合或引用校验失败，本阶段会停止，不会继续生成没有证据的 Finding 或 PRD。
+提示词明确禁止预设健身、订阅、广告等行业分类。一条 Review 可以包含多个独立问题，因此可以生成多条 Atomic Insight；但每条 Insight 只能表达一个具体方面和一种主要情绪，并且只能归入一个 Topic。完全没有可用 Insight 的评论进入 `OTHER`。Pydantic 与最终 Python Validator 会共同拦截批次遗漏、跨批非法 Review、跨 Topic 重复归类、虚构 Insight 和未分配 Insight。
+
+系统提供两级、各最多一次的有限修复。Insight 提取批次如果唯一问题是遗漏 Review，只把遗漏评论交给模型补提取，并重新校验完整批次；第一次统一聚合如果唯一问题是遗漏 Insight，则只发送“现有 Topic 摘要 + 遗漏 Insight”，模型只能加入现有 Topic 或创建语义确实不同的新 Topic，不能修改已有分组。非法 ID、重复归属、伪造 Review，或一次修复后仍有遗漏，都会立即停止，不会无限重试，也不会继续生成没有证据的 Finding 或 PRD。
 
 UI 会同时展示 Atomic Insight 数量和涉及的去重 Review 数量。后续统计“支持评论数”时必须按 Review ID 去重，不能把 Insight 数量当作用户评论数量。
 

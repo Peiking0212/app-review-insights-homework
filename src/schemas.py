@@ -149,6 +149,60 @@ class TopicAggregationDraft(StrictModel):
         return self
 
 
+class TopicRepairAssignment(StrictModel):
+    """把遗漏 Insight 补充到一个已经存在的 Topic Candidate。"""
+
+    candidate_id: str = Field(pattern=r"^TOPIC-CAND-[A-Za-z0-9_-]+$")
+    insight_ids: list[str] = Field(min_length=1)
+
+    @field_validator("insight_ids")
+    @classmethod
+    def validate_insight_ids(cls, values: list[str]) -> list[str]:
+        return _validate_id_list(values, "INSIGHT-")
+
+
+class TopicAggregationRepairDraft(StrictModel):
+    """仅处理第一次聚合遗漏 Insight 的一次性修复草稿。"""
+
+    existing_topic_assignments: list[TopicRepairAssignment] = Field(
+        default_factory=list
+    )
+    new_topics: list[TopicCandidate] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def repair_assignments_must_be_unique(self) -> "TopicAggregationRepairDraft":
+        if not self.existing_topic_assignments and not self.new_topics:
+            raise ValueError("聚合修复必须分配至少一个遗漏 Insight")
+        existing_candidate_ids = [
+            item.candidate_id for item in self.existing_topic_assignments
+        ]
+        new_candidate_ids = [item.candidate_id for item in self.new_topics]
+        if len(existing_candidate_ids) != len(set(existing_candidate_ids)):
+            raise ValueError("同一个现有 Topic Candidate 只能出现一次")
+        if len(new_candidate_ids) != len(set(new_candidate_ids)):
+            raise ValueError("修复中新建的 Topic Candidate ID 不得重复")
+        assigned_insight_ids = [
+            insight_id
+            for assignment in self.existing_topic_assignments
+            for insight_id in assignment.insight_ids
+        ] + [
+            insight_id
+            for topic in self.new_topics
+            for insight_id in topic.insight_ids
+        ]
+        duplicated = sorted(
+            insight_id
+            for insight_id, count in Counter(assigned_insight_ids).items()
+            if count > 1
+        )
+        if duplicated:
+            raise ValueError(
+                "遗漏 Insight 在修复结果中只能出现一次：" + ", ".join(duplicated)
+            )
+        return self
+
+
 class TopicDiscoveryResult(StrictModel):
     """动态主题阶段的完整结构化输出。"""
 
