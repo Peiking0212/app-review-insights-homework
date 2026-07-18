@@ -97,8 +97,9 @@ UTF-8 source read: passed
   - [x] Python 计算去重支持数量和置信度。
   - [x] 数据不足时降低置信度或放入 Discovery。
   - [x] 展示 Evidence Coverage、Review Traceability、Unsupported Claims 和 Conflict Evidence。
+  - [x] 同一 Insight 不得跨 Finding/Discovery 重复使用。
 - 验收：不存在非法引用；每个 Finding 可展开真实评论。
-- 已验证：40 个自动测试；内置演示数据真实生成 1 个 Finding 和 3 个 Discovery，支持、冲突和引用校验通过；Groundedness 指标使用确定性样例复算通过。
+- 已验证：50 个自动测试；内置演示数据真实生成 1 个 Finding 和 3 个 Discovery，支持、冲突和引用校验通过；Evidence Coverage 与 Review Traceability 100%、Unsupported Claims 0；Groundedness 指标使用确定性样例复算通过。
 - 建议 commits：
   - `feat: generate evidence-grounded findings`
   - `fix: reject hallucinated review references`
@@ -323,6 +324,22 @@ UTF-8 source read: passed
 - 查看资料：Apple Review Summarization Pipeline 的代表性证据与平衡原则、项目 Python Validator 原则。
 - 实际借鉴：证据驱动规划、明确范围边界、可测试验收标准、代码派生关系和失败停止。
 - 明确不借鉴及原因：不采用固定需求数量、模型自评优先级、复杂 Agent 编排和无证据路线图；这些会制造填充内容或降低可解释性。
+
+### 2026-07-18 / Finding 重复 Insight 修复
+
+- 完成：让 Finding Prompt 与现有 Pydantic 唯一性规则对齐；明确每个 Insight 只能进入一个 Finding/Discovery，冲突证据已经算作 Topic 覆盖；增加输出前硬性自检。
+- 修改文件：`src/finding_prompts.py`、`tests/test_finding_analysis.py`、`README.md`、`AI_USAGE.md`、`DEVELOPMENT_LOG.md`。
+- 测试命令与结果：Finding 专项 12 个测试、阶段 3/4 联合 21 个测试和全部 50 个自动测试通过；相关 Python 语法检查通过；真实 Topic → Finding 链路通过。
+- 遇到的问题：第一次只增加系统规则后，DeepSeek 在两次 Instructor 尝试中仍把 `INSIGHT-005` 同时作为冲突证据和 Discovery；将硬性自检放到用户消息末尾后真实运行通过。
+- AI 建议中的错误或风险：仅依赖 Schema 事后报错会增加人工重试；自动删除重复 Insight 虽能让演示通过，却可能悄悄改变证据含义。
+- 我的取舍：保留严格失败停止和一次有限重试；不删除校验、不自动修复模型证据、不增加无限重试；通过 Prompt 与 Schema 对齐降低失败率。
+- 当前可以演示：1 个 Finding、3 个 Discovery、100% Evidence Coverage、100% Review Traceability、0 Unsupported Claims 和通过的质量门。
+- 尚未完成：测试用例、端到端 TestCase 追溯、美国区真实评论采集和缓存 Demo。
+- 关联 commit：本次 Finding 重复 Insight 修复提交。
+- 下一步：阶段 5 测试用例与完整追溯检查。
+- 查看资料：Instructor + Pydantic 结构校验、项目 Python Validator 原则。
+- 实际借鉴：结构化输出约束、有限重试、输出前自检、确定性证据唯一性和失败阻断。
+- 明确不借鉴及原因：不无限重试、不静默删除重复证据、不让模型自行声称质量门通过；这些会增加成本或降低可审计性。
 
 ## 7. 每次收工填写模板
 

@@ -238,6 +238,18 @@ AI 不得直接决定或伪造：
 - 测试结果：新增 9 个阶段 4 测试；全部 49 个自动测试和语法检查通过；真实调用生成 1 个版本、1 条正式需求，完整处理 `FIND-001`。
 - 关联 commit：本次阶段 4 提交。
 
+### 2026-07-18 / Finding 重复 Insight 修复
+
+- 使用工具或模型：Codex、DeepSeek V4 Flash、Instructor、Pydantic、Python Validator。
+- 我的目标：修复模型把同一 Insight 同时放入 Finding 和 Discovery，导致结构化输出停止的问题。
+- 提供给 AI 的关键信息：页面显示 `INSIGHT-005` 被多个 Finding/Discovery 重复使用，模型连接状态正常。
+- AI 生成或建议了什么：保留现有唯一性质量门；在系统 Prompt 和靠近输出的用户消息末尾增加全局 Insight ID 自检、冲突证据覆盖说明和重叠候选合并规则；补充 Finding↔Discovery 重复测试。
+- 我发现的问题：Schema 已禁止重复，但原 Prompt 没有明确表达；第一次只增加宽泛系统规则后，DeepSeek 两次仍把正面 `INSIGHT-005` 同时用作冲突证据和 Discovery。
+- 我如何验证：增加针对性输出前检查；运行 Finding 专项 12 个测试和全部 50 个测试；真实执行 Review → Topic → Finding 链路。
+- 我做出的修改或取舍：不删除质量门、不自动丢弃重复证据、不增加无限重试；冲突证据已算作 Topic 覆盖，不需要重复进入 Discovery。
+- 测试结果：50 个自动测试通过；真实链路生成 1 个 Finding、3 个 Discovery，Evidence Coverage 100%、Review Traceability 100%、Unsupported Claims 0，质量门通过。
+- 关联 commit：本次 Finding 重复 Insight 修复提交。
+
 ## 8. 面试时的解释模板
 
 可以这样介绍：

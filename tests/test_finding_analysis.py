@@ -219,7 +219,17 @@ class FindingAnalysisTests(unittest.TestCase):
         )
 
         self.assertIn("不要输出支持数量和置信度", FINDING_SYSTEM_PROMPT)
+        self.assertIn(
+            "每个 Insight ID 在全部 candidates 和 discovery_candidates 中最多出现一次",
+            FINDING_SYSTEM_PROMPT,
+        )
+        self.assertIn("合并语义重叠的问题", FINDING_SYSTEM_PROMPT)
         self.assertIn("不生成版本规划", FINDING_SYSTEM_PROMPT)
+        self.assertIn("输出前必须执行以下硬性自检", messages[1]["content"])
+        self.assertIn(
+            "conflicting_insight_ids 已经算作 Topic 被覆盖",
+            messages[1]["content"],
+        )
         self.assertIn("REV-001", messages[1]["content"])
         self.assertIn("关注稳定性", messages[1]["content"])
 
@@ -234,6 +244,21 @@ class FindingAnalysisTests(unittest.TestCase):
                         update={"candidate_id": "CAND-999"}
                     ),
                 ]
+            )
+
+    def test_same_insight_cannot_feed_finding_and_discovery(self) -> None:
+        candidate = self.valid_draft().candidates[0]
+
+        with self.assertRaisesRegex(ValidationError, "INSIGHT-001"):
+            FindingDraft(
+                candidates=[candidate],
+                discovery_candidates=[
+                    DiscoveryCandidate(
+                        title="登录问题仍需探索",
+                        reason="需要更多样本。",
+                        insight_ids=["INSIGHT-001"],
+                    )
+                ],
             )
 
 

@@ -183,6 +183,7 @@ Review → Atomic Insight → Topic
 - 支持证据必须来自 `negative` 或 `mixed` Insight；
 - 冲突证据必须来自 `positive` 或 `mixed` Insight；
 - 不存在的 Insight、Review、Topic 和遗漏 Topic 会阻止本阶段；
+- 每个 Insight 在全部 Finding Candidate 与 Discovery Candidate 中最多引用一次；已作为冲突证据使用的 Insight 不得再次进入 Discovery；
 - 同一 Review 不能同时作为同一个 Finding 的支持和冲突证据；
 - 少于 2 条去重支持评论的候选进入 Discovery；
 - 置信度根据支持数、冲突数和 Topic 覆盖计算，不接受模型估算。
@@ -190,6 +191,8 @@ Review → Atomic Insight → Topic
 `MIN_FINDING_SUPPORT = 2` 是当前小样本演示的保守门槛，不代表统计显著性。最终使用大规模美国区评论时应根据样本量重新校准。
 
 2026-07-18 使用内置演示数据真实运行阶段 3：4 个 Topic 生成 1 个 Evidence Finding 和 3 个 Discovery。`FIND-001` 有 2 条去重支持评论、1 条冲突评论，Python 计算置信度为 `medium`；其余单评论问题均被降级，没有被描述为普遍问题。该结果只验证流程，不是最终产品结论。
+
+同日真实端到端重跑曾发现模型把 `INSIGHT-005` 同时作为 Finding 冲突证据和 Discovery 线索，Pydantic 正确阻止下游。修复后 Prompt 在系统规则和输出前自检中都明确 Insight 全局唯一分配；再次真实运行生成 1 个 Finding 与 3 个 Discovery，Evidence Coverage 和 Review Traceability 均为 100%，Unsupported Claims 为 0，质量门通过。没有删除校验、自动丢弃证据或增加无限重试。
 
 ### Finding Quality · Groundedness Score
 
